@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { createCell, getCells } from './state/cells.js'
 import { initParticles, addCellParticles, updateParticles } from './cosmos/particles.js'
+import { initAttractors, updateAttractors } from './cosmos/attractors.js'
 import { TYPE_NAMES } from './generation/types.js'
 
 // Scene
@@ -27,6 +28,7 @@ controls.minDistance = 10
 
 // Init particles
 initParticles(scene)
+initAttractors(scene)
 
 // Seed cells
 seedCosmos()
@@ -61,6 +63,7 @@ function animate() {
   const breathPhase = elapsed * (Math.PI * 2 / 4)
 
   updateParticles(elapsed, breathPhase)
+  updateAttractors(0, 1) // placeholder CPU pressure=0, battery=1 until signals module
   controls.update()
   renderer.render(scene, camera)
 }
