@@ -1,0 +1,5 @@
+GitNexus/
+node_modules/
+.env
+.secrets
+*.log

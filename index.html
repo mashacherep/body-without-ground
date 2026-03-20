@@ -1,0 +1,3429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>body without ground</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-user-select:none;user-select:none}
+*:focus{outline:none}
+::selection{background:transparent}
+html,body{width:100%;height:100%;background:#050508;overflow:hidden;font-family:'Courier New',monospace;color:#e8e4dc}
+
+/* ===== BACKGROUND CANVAS LAYERS ===== */
+#bg-canvas{position:fixed;inset:0;z-index:0}
+#conn-canvas{position:fixed;inset:0;z-index:1;pointer-events:none}
+.ghost-text{position:fixed;font-family:'Courier New',monospace;font-size:9px;color:rgba(200,195,180,.18);pointer-events:none;white-space:nowrap;font-style:italic;z-index:2;animation:ghostDrift 8s ease forwards}
+
+/* Region labels in the world */
+.region-label{position:absolute;font-family:Impact,'Arial Narrow',Helvetica,sans-serif;font-size:52px;color:rgba(255,255,255,.1);text-transform:uppercase;letter-spacing:.12em;pointer-events:none;white-space:nowrap;z-index:0}
+.region-sublabel{position:absolute;font-family:'Courier New',monospace;font-size:9px;color:rgba(255,255,255,.16);letter-spacing:.12em;pointer-events:none;white-space:nowrap;z-index:0}
+@keyframes ghostDrift{0%{opacity:.2;transform:translateY(0)}70%{opacity:.1}100%{opacity:0;transform:translateY(-30px)}}
+
+/* ===== NAV BAR ===== */
+#nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;gap:24px;padding:10px 20px;border-bottom:1px solid rgba(255,255,255,.06);background:rgba(5,5,8,.92);backdrop-filter:blur(8px);font-size:10px;letter-spacing:.12em}
+.nav-item{color:rgba(255,255,255,.28);cursor:pointer;text-transform:lowercase;transition:color .3s}
+.nav-item:hover,.nav-item.active{color:rgba(255,255,255,.72)}
+.nav-sep{color:rgba(255,255,255,.08)}
+#nav-right{margin-left:auto;display:flex;align-items:center;gap:16px}
+#kyiv-clock{color:rgba(220,165,55,.62);font-size:10px;letter-spacing:.1em}
+#nyc-clock{color:rgba(120,165,220,.48);font-size:10px;letter-spacing:.1em}
+#alert-status{font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,80,60,.5);display:none}
+#alert-status.active{display:inline;animation:alertPulse 1.5s ease-in-out infinite}
+@keyframes alertPulse{0%,100%{opacity:.4}50%{opacity:1}}
+
+/* ===== INFINITE CANVAS WITH ZOOM ===== */
+#grid-viewport{position:fixed;top:34px;bottom:44px;left:0;right:0;overflow:hidden;z-index:3;background:transparent;cursor:grab}
+#grid-viewport:active{cursor:grabbing}
+#grid-wrap{will-change:transform}
+#grid{position:relative;width:3200px;height:2400px}
+#zoom-display{position:fixed;bottom:50px;left:50%;transform:translateX(-50%);z-index:101;font-size:8px;letter-spacing:.14em;color:rgba(255,255,255,.2);pointer-events:none;transition:opacity .5s}
+#zoom-display.flash{opacity:1}
+#signals-hud{position:fixed;top:38px;left:14px;z-index:100;font-size:7px;letter-spacing:.08em;color:rgba(255,255,255,.14);line-height:1.9;pointer-events:none;font-family:'Courier New',monospace}
+
+/* ===== CELLS ===== */
+.cell{border:1px solid rgba(255,255,255,.07);background:rgba(8,8,14,.82);padding:8px 9px;position:absolute;overflow:hidden;transition:border-color .6s,opacity 1.5s,background .8s;opacity:0;cursor:default;width:175px;backdrop-filter:blur(3px)}
+.cell.spawned{opacity:1;transition:opacity 1.2s ease}
+.cell:hover{border-color:rgba(255,255,255,.18)}
+.cell.poem{border-color:rgba(200,195,180,.12)}
+.cell.conway{border-color:rgba(80,200,120,.15);padding:4px}
+.cell.ascii{border-color:rgba(80,145,215,.15)}
+.cell.music{border-color:rgba(215,162,48,.15);cursor:pointer}
+.cell.essay{border-color:rgba(155,120,230,.12)}
+.cell.ukraine{border-color:rgba(225,162,48,.2);background:rgba(12,8,4,.92)}
+.cell.attention{border-color:rgba(255,120,80,.15)}
+.cell.embedding{border-color:rgba(100,180,255,.15)}
+.cell.network{border-color:rgba(180,140,255,.15)}
+.cell.weights{border-color:rgba(200,200,180,.1);padding:2px;font-size:0}
+.cell.gradient{border-color:rgba(80,220,160,.15)}
+.cell.activation{border-color:rgba(255,180,100,.15)}
+.cell.loss{border-color:rgba(120,200,180,.15)}
+.cell.tokenprob{border-color:rgba(200,100,200,.15)}
+.cell.hypergraph{border-color:rgba(80,160,255,.18)}
+.cell.multiway{border-color:rgba(230,150,50,.18)}
+.cell.neuralpass{border-color:rgba(140,200,100,.15)}
+.cell.orbit{border-color:rgba(100,180,230,.15)}
+.cell.wavefunction{border-color:rgba(0,220,220,.15)}
+.cell.stringrewrite{border-color:rgba(230,100,180,.15)}
+.cell.apoptosis{border-color:rgba(200,60,80,.18)}
+.cell.codeself{border-color:rgba(180,220,100,.15)}
+.cell.reactiondiffusion{border-color:rgba(60,180,140,.18);padding:2px !important}
+.cell.lsystem{border-color:rgba(80,160,60,.18)}
+.cell.seismic{border-color:rgba(120,200,180,.18)}
+.cell.voronoi{border-color:rgba(200,120,200,.15)}
+.cell.reactiondiffusion .cell-pulse{background:rgba(60,180,140,.5)}
+.cell.lsystem .cell-pulse{background:rgba(80,160,60,.5)}
+.cell.seismic .cell-pulse{background:rgba(120,200,180,.5)}
+.cell.voronoi .cell-pulse{background:rgba(200,120,200,.5)}
+.cell.gitnexus{border-color:rgba(200,100,255,.2);width:500px !important;height:380px;padding:0 !important;overflow:hidden}
+.cell.gitnexus iframe{width:100%;height:100%;border:none;border-radius:0;pointer-events:auto}
+.cell.gitnexus .cell-type{position:absolute;top:4px;left:6px;z-index:2;background:rgba(5,5,8,.8);padding:1px 6px;border-radius:2px}
+.cell.gitnexus .cell-pulse{z-index:2}
+.cell.fading{opacity:.15;transition:opacity 120s}
+
+.cell-type{font-size:7px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.16);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
+.cell-idx{color:rgba(255,255,255,.1)}
+.cell-text{font-size:8px;line-height:1.55;color:rgba(245,238,220,.6);font-style:italic;word-break:break-word}
+.cell.ukraine .cell-text{color:rgba(228,172,68,.78);font-style:normal}
+.cell.essay .cell-text{color:rgba(175,148,240,.68)}
+.cell.music .cell-text{color:rgba(220,165,55,.75);font-style:normal}
+.cell-meta{font-size:7px;letter-spacing:.1em;color:rgba(255,255,255,.12);margin-top:8px;text-transform:uppercase}
+
+/* Conway canvas inside cell */
+.cell.conway canvas{display:block;width:100%;image-rendering:pixelated}
+
+/* Music bars */
+.music-bars{display:flex;align-items:flex-end;gap:2px;height:28px;margin:8px 0}
+.music-bar{width:5px;background:rgba(220,165,55,.6);border-radius:1px 1px 0 0;transition:height .15s}
+
+/* Cell pulse dot */
+.cell-pulse{position:absolute;top:6px;right:6px;width:4px;height:4px;border-radius:50%;animation:cpulse 3s ease-in-out infinite}
+.cell.poem .cell-pulse{background:rgba(200,195,180,.45)}
+.cell.conway .cell-pulse{background:rgba(80,200,120,.5)}
+.cell.ascii .cell-pulse{background:rgba(80,145,215,.5)}
+.cell.music .cell-pulse{background:rgba(215,162,48,.5)}
+.cell.essay .cell-pulse{background:rgba(155,120,230,.5)}
+.cell.ukraine .cell-pulse{background:rgba(230,165,55,.65);animation-duration:1.2s}
+.cell.attention .cell-pulse{background:rgba(255,120,80,.5)}
+.cell.embedding .cell-pulse{background:rgba(100,180,255,.5)}
+.cell.network .cell-pulse{background:rgba(180,140,255,.5)}
+.cell.weights .cell-pulse{background:rgba(200,200,180,.3)}
+.cell.gradient .cell-pulse{background:rgba(80,220,160,.5)}
+.cell.activation .cell-pulse{background:rgba(255,180,100,.5)}
+.cell.loss .cell-pulse{background:rgba(120,200,180,.5)}
+.cell.tokenprob .cell-pulse{background:rgba(200,100,200,.5)}
+.cell.hypergraph .cell-pulse{background:rgba(80,160,255,.5)}
+.cell.multiway .cell-pulse{background:rgba(230,150,50,.5)}
+.cell.neuralpass .cell-pulse{background:rgba(140,200,100,.5)}
+.cell.orbit .cell-pulse{background:rgba(100,180,230,.5)}
+.cell.wavefunction .cell-pulse{background:rgba(0,220,220,.5)}
+.cell.stringrewrite .cell-pulse{background:rgba(230,100,180,.5)}
+.cell.apoptosis .cell-pulse{background:rgba(200,60,80,.6)}
+.cell.codeself .cell-pulse{background:rgba(180,220,100,.5)}
+.cell.gitnexus .cell-pulse{background:rgba(200,100,255,.5)}
+@keyframes cpulse{0%,100%{opacity:.3;transform:scale(1)}50%{opacity:1;transform:scale(1.6)}}
+
+/* Assumptions tooltip */
+.cell-assumptions{display:none;position:absolute;bottom:0;left:0;right:0;padding:8px 10px;background:rgba(5,5,8,.96);border-top:1px solid rgba(200,62,42,.2);font-size:8px;color:rgba(200,68,50,.65);font-style:italic;line-height:1.7;z-index:5}
+.cell-assumptions::before{content:'what the machine assumed:';display:block;font-size:7px;letter-spacing:.14em;text-transform:uppercase;color:rgba(200,62,42,.4);font-style:normal;margin-bottom:4px}
+.cell:hover .cell-assumptions{display:block}
+
+/* ===== STATEMENT OVERLAY ===== */
+#stmt-overlay{position:fixed;top:34px;bottom:44px;left:0;right:0;z-index:200;display:flex;align-items:center;justify-content:center;padding:8vw;pointer-events:none;opacity:0;transition:opacity 1.4s;background:rgba(5,5,8,.7)}
+#stmt-overlay.show{opacity:1}
+#stmt-text{font-family:Impact,'Arial Narrow',Helvetica,sans-serif;font-size:clamp(28px,5vw,70px);line-height:.9;text-transform:uppercase;color:#f5f0e4;letter-spacing:.01em;max-width:75vw;text-align:center}
+#stmt-sub{font-size:clamp(11px,1.4vw,16px);color:rgba(245,240,228,.36);margin-top:16px;letter-spacing:.05em;font-style:italic;text-align:center}
+
+/* ===== TAGS TICKER ===== */
+#tags{position:fixed;bottom:44px;left:0;right:0;z-index:90;overflow:hidden;display:flex;flex-direction:column;gap:3px;padding:4px 0;background:rgba(5,5,8,.85);border-top:1px solid rgba(255,255,255,.04);border-bottom:1px solid rgba(255,255,255,.04)}
+.tag-row{display:flex;gap:5px;white-space:nowrap;will-change:transform}
+.tag{display:inline-block;font-size:8px;letter-spacing:.09em;padding:2px 8px;border-radius:2px;flex-shrink:0}
+.tag-w{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);color:rgba(255,255,255,.32)}
+.tag-h{background:rgba(230,148,48,.06);border:1px solid rgba(230,148,48,.16);color:rgba(235,165,70,.58)}
+.tag-c{background:rgba(65,130,215,.05);border:1px solid rgba(65,130,215,.14);color:rgba(105,162,228,.5)}
+.tag-p{background:rgba(155,120,230,.04);border:1px solid rgba(155,120,230,.12);color:rgba(175,145,240,.48)}
+.tag-r{background:rgba(200,62,42,.04);border:1px solid rgba(200,62,42,.12);color:rgba(220,90,70,.45)}
+
+/* ===== BOTTOM BAR ===== */
+#bar{position:fixed;bottom:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:8px 20px;border-top:1px solid rgba(255,255,255,.04);background:rgba(5,5,8,.92);backdrop-filter:blur(8px);font-size:8px;letter-spacing:.1em;color:rgba(255,255,255,.18)}
+#bar-left{display:flex;align-items:center;gap:16px}
+#gen-count{color:rgba(255,255,255,.28)}
+#bar-status{color:rgba(255,255,255,.15)}
+#bar-right{display:flex;align-items:center;gap:14px;text-align:right}
+#entropy-display{color:rgba(255,255,255,.12)}
+#markov-count{color:rgba(155,120,230,.35)}
+#assumption-count{color:rgba(200,62,42,.35);cursor:pointer}
+#assumption-count:hover{color:rgba(200,62,42,.7)}
+
+/* ===== INTRO SEQUENCE ===== */
+#intro{position:fixed;inset:0;z-index:500;background:#050508;display:flex;align-items:center;justify-content:center;flex-direction:column;transition:opacity 2s;pointer-events:all}
+#intro.fade{opacity:0;pointer-events:none}
+#intro-line{font-family:Impact,'Arial Narrow',Helvetica,sans-serif;font-size:clamp(24px,4.5vw,60px);text-transform:uppercase;color:#f5f0e4;text-align:center;line-height:.92;letter-spacing:.01em;opacity:0;transition:opacity 1.2s;max-width:80vw}
+#intro-sub{font-family:'Courier New',monospace;font-size:clamp(10px,1.3vw,15px);color:rgba(245,240,228,.28);text-align:center;margin-top:18px;letter-spacing:.06em;font-style:italic;opacity:0;transition:opacity 1.2s .4s;max-width:70vw}
+#intro-line.show,#intro-sub.show{opacity:1}
+
+/* ===== GLOBAL HEARTBEAT — the body breathes ===== */
+@keyframes heartbeat{0%,100%{opacity:1}50%{opacity:.88}}
+.heartbeat-sync{animation:heartbeat 4s ease-in-out infinite}
+#grid-viewport.raid-active .cell{filter:brightness(.5) saturate(.3);transition:filter 3s}
+#grid-viewport.raid-active .region-label{color:rgba(200,60,40,.08) !important}
+body.raid-active #bg-canvas{filter:brightness(.4) hue-rotate(15deg);transition:filter 3s}
+
+/* ===== GENERATION OVERLAY ===== */
+#gen-overlay{position:fixed;inset:0;z-index:250;background:rgba(5,5,8,.93);display:flex;flex-direction:column;justify-content:center;padding:7vw;opacity:0;pointer-events:none;transition:opacity .5s}
+#gen-overlay.show{opacity:1;pointer-events:all}
+#gen-content{font-family:Impact,'Arial Narrow',Helvetica,sans-serif;font-size:clamp(28px,5.5vw,72px);text-transform:uppercase;line-height:.88;color:#f5f0e4;margin-bottom:28px;letter-spacing:.01em;max-height:60vh;overflow:hidden}
+#gen-content.mono{font-family:'Courier New',monospace;font-size:clamp(11px,1.2vw,15px);text-transform:none;letter-spacing:0;line-height:1.65}
+#gen-assumptions-block{opacity:0;transition:opacity .9s}
+.gen-asm-header{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.gen-asm-line{flex:1;height:1px;background:rgba(200,62,42,.22)}
+.gen-asm-label{font-size:8px;letter-spacing:.2em;text-transform:uppercase;color:rgba(200,62,42,.45)}
+.gen-asm{font-size:11px;font-style:italic;color:rgba(200,68,50,.65);line-height:1.75;opacity:0;transform:translateY(4px);transition:opacity .6s,transform .6s}
+.gen-asm::before{content:'— ';opacity:.4}
+.gen-asm.on{opacity:1;transform:none}
+#gen-dismiss{margin-top:22px;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.25);background:none;border:1px solid rgba(255,255,255,.1);padding:9px 22px;cursor:pointer;font-family:'Courier New',monospace;transition:all .2s}
+#gen-dismiss:hover{color:rgba(255,255,255,.65);border-color:rgba(255,255,255,.35)}
+.cursor-blink{display:inline-block;width:2.5px;height:.78em;background:#f5f0e4;vertical-align:middle;margin-left:2px;animation:blink .88s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+/* ===== LEDGER (all assumptions) ===== */
+#ledger{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:110;width:min(520px,88vw);max-height:75vh;overflow-y:auto;border:1px solid rgba(255,255,255,.12);padding:28px 24px;background:rgba(5,5,8,.97);backdrop-filter:blur(18px);display:none;opacity:0;transition:opacity .4s}
+#ledger.open{display:block;opacity:1}
+#ledger-title{font-family:Impact,'Arial Narrow',sans-serif;font-size:26px;text-transform:uppercase;color:#f5f0e4;margin-bottom:16px;letter-spacing:.01em}
+.ledger-entry{font-size:10px;font-style:italic;color:rgba(200,68,50,.6);line-height:1.7;margin-bottom:2px}
+.ledger-entry::before{content:'— ';opacity:.35}
+#ledger-note{font-size:9px;color:rgba(255,255,255,.16);margin-top:16px;letter-spacing:.06em;line-height:1.6}
+#ledger-close{position:absolute;top:10px;right:14px;font-size:9px;color:rgba(255,255,255,.2);background:none;border:none;cursor:pointer;font-family:'Courier New',monospace}
+#ledger-close:hover{color:rgba(255,255,255,.6)}
+
+/* ===== AIR RAID OVERLAY ===== */
+#raid-overlay{position:fixed;inset:0;z-index:4;pointer-events:none;opacity:0;transition:opacity 3s;background:radial-gradient(ellipse at center,rgba(40,15,10,.3) 0%,rgba(8,4,2,.4) 100%)}
+#raid-overlay.active{opacity:1}
+
+/* ===== POWER OUTAGE ===== */
+.cell.outage{background:rgba(2,2,4,.98) !important;border-color:rgba(255,255,255,.02) !important}
+.cell.outage *{opacity:.04 !important}
+.cell.outage .cell-pulse{display:none}
+.cell.recovering{transition:all 4s ease !important}
+
+/* ===== TEMPERATURE SPLIT ===== */
+#temp-overlay{position:fixed;inset:0;z-index:2;pointer-events:none;opacity:.12;transition:opacity 2s}
+
+/* ===== SCROLLBAR ===== */
+#grid-viewport::-webkit-scrollbar{width:4px}
+#grid-viewport::-webkit-scrollbar-track{background:transparent}
+#grid-viewport::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08);border-radius:2px}
+</style>
+</head>
+<body>
+
+<!-- Intro sequence -->
+<div id="intro">
+  <div id="intro-line"></div>
+  <div id="intro-sub"></div>
+</div>
+
+<!-- Background particle canvas -->
+<canvas id="bg-canvas"></canvas>
+<!-- Connection lines canvas -->
+<canvas id="conn-canvas"></canvas>
+<!-- Temperature overlay for Kyiv/NYC split -->
+<div id="temp-overlay"></div>
+<!-- Air raid overlay -->
+<div id="raid-overlay"></div>
+
+<!-- Nav -->
+<div id="nav">
+  <span class="nav-item active" data-view="mycelium">mycelium</span>
+  <span class="nav-sep">·</span>
+  <span class="nav-item" data-view="roots" onclick="window.open('http://localhost:4173','_blank')">roots (gitnexus)</span>
+  <span class="nav-sep">·</span>
+  <span class="nav-item" data-view="about">about</span>
+  <span class="nav-sep">·</span>
+  <span class="nav-item" data-view="essay">essay</span>
+  <div id="nav-right">
+    <span id="alert-status">⚠ AIR RAID ALERT — KYIV</span>
+    <span id="kyiv-clock">KYIV --:--</span>
+    <span id="nyc-clock">NYC --:--</span>
+  </div>
+</div>
+
+<!-- Grid -->
+<div id="grid-viewport">
+  <div id="grid-wrap">
+    <div id="grid"></div>
+  </div>
+</div>
+<div id="zoom-display">100%</div>
+
+<!-- Real signals HUD -->
+<div id="signals-hud"></div>
+
+<!-- Statement overlay -->
+<div id="stmt-overlay">
+  <div style="text-align:center;max-width:85vw">
+    <div id="stmt-text"></div>
+    <div id="stmt-sub"></div>
+  </div>
+</div>
+
+<!-- Tags ticker -->
+<div id="tags">
+  <div class="tag-row" id="tag-row-1"></div>
+  <div class="tag-row" id="tag-row-2"></div>
+</div>
+
+<!-- Generation overlay (full screen typed reveal) -->
+<div id="gen-overlay">
+  <div id="gen-content"></div>
+  <div id="gen-assumptions-block">
+    <div class="gen-asm-header"><div class="gen-asm-line"></div><div class="gen-asm-label">what the machine assumed</div><div class="gen-asm-line"></div></div>
+    <div id="gen-assumptions"></div>
+  </div>
+  <button id="gen-dismiss" onclick="dismissGeneration()">release to grid</button>
+</div>
+
+<!-- Ledger -->
+<div id="ledger">
+  <button id="ledger-close" onclick="closeLedger()">×</button>
+  <div id="ledger-title">THE MACHINE ASSUMED</div>
+  <div id="ledger-entries"></div>
+  <div id="ledger-note"></div>
+</div>
+
+<!-- Bottom bar -->
+<div id="bar">
+  <div id="bar-left">
+    <span id="gen-count">gen 0</span>
+    <span id="bar-status">universe idle</span>
+  </div>
+  <div id="bar-right">
+    <span id="markov-count">markov: 0 words</span>
+    <span id="assumption-count" onclick="openLedger()">assumptions: 0</span>
+    <span id="entropy-display">e:--</span>
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  BODY WITHOUT GROUND — a living generative art installation
+//  by masha cherep
+//
+//  the machine forgets. you carry it.
+//  kyiv is not a token.
+// ============================================================
+
+// Groq API key — the garden's voice. Get a free key at groq.com
+// Visitors can set via URL param ?key=gsk_xxx or localStorage
+var GROQ_KEY = localStorage.getItem('bwg-groq-key') || new URLSearchParams(window.location.search).get('key') || '';
+var GROQ_MODEL = 'llama-3.3-70b-versatile';
+var TYPES = ['poem','conway','ascii','music','essay','ukraine','attention','embedding','network','weights','gradient','activation','loss','tokenprob','hypergraph','multiway','neuralpass','orbit','wavefunction','stringrewrite','apoptosis','codeself','reactiondiffusion','lsystem','seismic','voronoi'];
+var PENTA = [261.63,293.66,329.63,392.00,440.00,523.25,587.33,659.25,783.99];
+var GEN_INTERVAL = 300000; // 5 minutes — conserve Groq free tier
+var AUTO_GEN = true;
+
+// ===== STATE =====
+var genCount = 0;
+var busy = false;
+var worldWords = [];
+var worldRecent = [];
+var allAssumptions = [];
+var audioCtx = null;
+var kyivAlertActive = false;
+var cells = [];
+var pendingGen = null;
+var forceGenType = null;       // override next generation type
+var lastRealLogprobs = [];    // actual token logprobs from Groq
+var lastRealTokens = [];       // actual tokens generated
+var realGenerationHistory = []; // latency, token count, etc per generation
+
+// ===== PARTICLE SYSTEM — galaxy background =====
+var bgCanvas, bgCtx, connCanvas, connCtx;
+var W, H, bgTick = 0;
+var streaks = [], sparks = [], nebulas = [];
+
+// ===== REAL MATH BACKGROUND — Lorenz attractor + device signals =====
+
+// Machine body signals
+var machineBody = {
+  cpuPressure: 0,     // performance.now() derivative
+  memoryGB: navigator.deviceMemory || 8,
+  batteryLevel: 1,
+  batteryCharging: true,
+  lastFrameTime: 0,
+  frameDelta: 16,
+  uptime: 0,
+  deaths: 0,           // cells that have died
+  mourning: [],         // last words of dead cells
+};
+
+// Try to get battery info
+if (navigator.getBattery) {
+  navigator.getBattery().then(function(b) {
+    machineBody.batteryLevel = b.level;
+    machineBody.batteryCharging = b.charging;
+    b.addEventListener('levelchange', function() { machineBody.batteryLevel = b.level; });
+    b.addEventListener('chargingchange', function() { machineBody.batteryCharging = b.charging; });
+  }).catch(function(){});
+}
+
+function initCanvas() {
+  bgCanvas = document.getElementById('bg-canvas');
+  bgCtx = bgCanvas.getContext('2d');
+  connCanvas = document.getElementById('conn-canvas');
+  connCtx = connCanvas.getContext('2d');
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+}
+
+function resizeCanvas() {
+  W = bgCanvas.width = connCanvas.width = innerWidth;
+  H = bgCanvas.height = connCanvas.height = innerHeight;
+}
+
+// === LORENZ STRANGE ATTRACTOR ===
+// dx/dt = σ(y-x), dy/dt = x(ρ-z)-y, dz/dt = xy-βz
+var lorenz = {
+  points: [],
+  // Classic Lorenz parameters
+  sigma: 10, rho: 28, beta: 8/3,
+  dt: 0.003,
+  x: 0.1, y: 0, z: 0,
+};
+
+// Second attractor: Rössler (different shape)
+var rossler = {
+  points: [],
+  a: 0.2, b: 0.2, c: 5.7,
+  dt: 0.008,
+  x: 1, y: 1, z: 1,
+};
+
+function stepLorenz() {
+  var L = lorenz;
+  var dx = L.sigma * (L.y - L.x) * L.dt;
+  var dy = (L.x * (L.rho - L.z) - L.y) * L.dt;
+  var dz = (L.x * L.y - L.beta * L.z) * L.dt;
+  L.x += dx; L.y += dy; L.z += dz;
+  // Project 3D → 2D
+  var scale = 8;
+  var px = W / 2 + L.x * scale;
+  var py = H / 2 - L.z * scale + 180;
+  L.points.push({ x: px, y: py, z: L.z });
+  if (L.points.length > 2000) L.points.shift();
+}
+
+function stepRossler() {
+  var R = rossler;
+  var dx = (-R.y - R.z) * R.dt;
+  var dy = (R.x + R.a * R.y) * R.dt;
+  var dz = (R.b + R.z * (R.x - R.c)) * R.dt;
+  R.x += dx; R.y += dy; R.z += dz;
+  var scale = 12;
+  var px = W / 2 + R.x * scale - 100;
+  var py = H / 2 + R.y * scale - 80;
+  R.points.push({ x: px, y: py, z: R.z });
+  if (R.points.length > 1500) R.points.shift();
+}
+
+function initParticles() {
+  // Seed attractors with initial steps
+  for (var i = 0; i < 800; i++) { stepLorenz(); stepRossler(); }
+}
+
+function bgFrame() {
+  var now = performance.now();
+  machineBody.frameDelta = now - machineBody.lastFrameTime;
+  machineBody.lastFrameTime = now;
+  machineBody.uptime = now;
+  // CPU pressure from frame timing jitter
+  machineBody.cpuPressure = Math.min(1, Math.max(0, (machineBody.frameDelta - 16) / 50));
+
+  bgCtx.fillStyle = 'rgba(5,5,8,.06)';
+  bgCtx.fillRect(0, 0, W, H);
+  bgTick++;
+
+  // Battery affects attractor speed: low battery = sluggish
+  var batteryMod = .5 + machineBody.batteryLevel * .5;
+  lorenz.dt = 0.003 * batteryMod;
+  rossler.dt = 0.008 * batteryMod;
+
+  // CPU pressure affects Lorenz ρ parameter: high pressure = more chaotic
+  lorenz.rho = 28 + machineBody.cpuPressure * 8;
+
+  // Step attractors
+  for (var s = 0; s < 4; s++) { stepLorenz(); stepRossler(); }
+
+  // Draw Lorenz attractor trail
+  var pts = lorenz.points;
+  if (pts.length > 2) {
+    for (var i = 1; i < pts.length; i++) {
+      var age = i / pts.length;
+      var zNorm = (pts[i].z - 5) / 40; // normalize z for color
+      // Color shifts: warm when mourning, cool normally
+      var mourning = machineBody.deaths > 0;
+      var r = mourning ? 180 + zNorm * 60 : 60 + zNorm * 40;
+      var g = 100 + zNorm * 60;
+      var b = mourning ? 120 : 180 + zNorm * 60;
+      var alpha = age * .18;
+      bgCtx.beginPath();
+      bgCtx.moveTo(pts[i-1].x, pts[i-1].y);
+      bgCtx.lineTo(pts[i].x, pts[i].y);
+      bgCtx.strokeStyle = 'rgba('+~~r+','+~~g+','+~~b+','+alpha.toFixed(3)+')';
+      bgCtx.lineWidth = .4 + age * .6;
+      bgCtx.stroke();
+    }
+  }
+
+  // Draw Rössler attractor trail (offset, different color)
+  var rpts = rossler.points;
+  if (rpts.length > 2) {
+    for (var i = 1; i < rpts.length; i++) {
+      var age = i / rpts.length;
+      var alpha = age * .12;
+      bgCtx.beginPath();
+      bgCtx.moveTo(rpts[i-1].x, rpts[i-1].y);
+      bgCtx.lineTo(rpts[i].x, rpts[i].y);
+      bgCtx.strokeStyle = 'rgba(200,150,80,'+alpha.toFixed(3)+')';
+      bgCtx.lineWidth = .3 + age * .4;
+      bgCtx.stroke();
+    }
+  }
+
+  // Sparse field of dots influenced by uptime entropy
+  if (bgTick % 3 === 0) {
+    var dotX = Math.sin(bgTick * .017 + machineBody.uptime * .00001) * W * .4 + W * .5;
+    var dotY = Math.cos(bgTick * .013 + machineBody.uptime * .00002) * H * .4 + H * .5;
+    bgCtx.beginPath();
+    bgCtx.arc(dotX, dotY, .5 + machineBody.cpuPressure, 0, 6.2832);
+    bgCtx.fillStyle = 'rgba(180,180,200,.08)';
+    bgCtx.fill();
+  }
+
+  requestAnimationFrame(bgFrame);
+}
+
+// ===== CONNECTION LINES between drifting nodes =====
+function connFrame() {
+  connCtx.clearRect(0, 0, W, H);
+  var nodes = driftNodes;
+  if (nodes.length < 2) { requestAnimationFrame(connFrame); return; }
+
+  var maxCheck = Math.min(nodes.length, 80);
+  for (var i = 0; i < maxCheck; i++) {
+    var a = nodes[i];
+    for (var j = i + 1; j < Math.min(i + 10, maxCheck); j++) {
+      var b = nodes[j];
+      var dx = a.x - b.x, dy = a.y - b.y;
+      var d = Math.sqrt(dx * dx + dy * dy);
+      if (d < 300) {
+        var sameType = a.type === b.type;
+        var alpha = (1 - d / 300) * (sameType ? .16 : .04);
+        var color = sameType ? getTypeColor(a.type, alpha) : 'rgba(200,195,180,' + alpha.toFixed(3) + ')';
+        connCtx.beginPath();
+        connCtx.moveTo(a.x, a.y);
+        connCtx.lineTo(b.x, b.y);
+        connCtx.strokeStyle = color;
+        connCtx.lineWidth = sameType ? .7 : .3;
+        connCtx.stroke();
+      }
+    }
+  }
+  requestAnimationFrame(connFrame);
+}
+
+function getTypeColor(type, alpha) {
+  var a = alpha.toFixed(3);
+  switch(type) {
+    case 'poem': return 'rgba(200,195,180,' + a + ')';
+    case 'conway': return 'rgba(80,200,120,' + a + ')';
+    case 'ascii': return 'rgba(80,145,215,' + a + ')';
+    case 'music': return 'rgba(215,162,48,' + a + ')';
+    case 'essay': return 'rgba(155,120,230,' + a + ')';
+    case 'ukraine': return 'rgba(225,162,48,' + a + ')';
+    default: return 'rgba(200,195,180,' + a + ')';
+  }
+}
+
+// ===== GHOST TEXT — floating words that drift and fade =====
+var GHOST_WORDS = ['luminous','luminous','luminous','pentatonic_maj','root F#4','emergence','dreamed-of','transformed','echoed','contracted','composed_from','ancient','landscape','unification','sound of:','experience','earth','mourned','survived','persistence','signal','frequency','entropy','drift'];
+var ghostInterval;
+
+function startGhosts() {
+  spawnGhost();
+  ghostInterval = setInterval(spawnGhost, 3000 + Math.random() * 4000);
+}
+
+function spawnGhost() {
+  var word = GHOST_WORDS[Math.floor(Math.random() * GHOST_WORDS.length)];
+  // Sometimes use Markov words instead
+  if (worldWords.length > 10 && Math.random() < .4) {
+    word = worldWords[Math.floor(Math.random() * worldWords.length)];
+  }
+  var el = document.createElement('div');
+  el.className = 'ghost-text';
+  el.textContent = word;
+  el.style.left = (Math.random() * 85 + 5) + '%';
+  el.style.top = (Math.random() * 75 + 10) + '%';
+  document.body.appendChild(el);
+  setTimeout(function() { if (el.parentNode) el.remove(); }, 9000);
+}
+
+// ===== PERSISTENCE (localStorage) =====
+function saveState() {
+  try {
+    var state = {
+      genCount: genCount,
+      worldWords: worldWords.slice(-300),
+      worldRecent: worldRecent.slice(-10),
+      allAssumptions: allAssumptions.slice(-100),
+      deaths: machineBody.deaths,
+      mourning: machineBody.mourning,
+      sessions: (parseInt(localStorage.getItem('bwg-sessions')) || 0),
+      cells: cells.map(function(c) {
+        return { type: c.type, content: c.content, assumptions: c.assumptions, entropy: c.entropy, idx: c.idx, time: c.time, meta: c.meta };
+      }).slice(-200)
+    };
+    localStorage.setItem('bwg-state', JSON.stringify(state));
+  } catch(e) {}
+}
+
+// Track sessions (each page load = a new life)
+var sessionCount = (parseInt(localStorage.getItem('bwg-sessions')) || 0) + 1;
+localStorage.setItem('bwg-sessions', sessionCount);
+
+function loadState() {
+  try {
+    var raw = localStorage.getItem('bwg-state');
+    if (!raw) return false;
+    var state = JSON.parse(raw);
+    genCount = state.genCount || 0;
+    worldWords = state.worldWords || [];
+    worldRecent = state.worldRecent || [];
+    allAssumptions = state.allAssumptions || [];
+    machineBody.deaths = state.deaths || 0;
+    machineBody.mourning = state.mourning || [];
+    // Rebuild cells from saved state
+    if (state.cells && state.cells.length > 0) {
+      state.cells.forEach(function(c) {
+        createCellElement(c);
+      });
+      updateCounts();
+      return true;
+    }
+  } catch(e) {}
+  return false;
+}
+
+// ===== CLOCKS =====
+function updateClocks() {
+  try {
+    var kyiv = new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Kiev' }));
+    var nyc = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
+    var kh = kyiv.getHours(), km = kyiv.getMinutes();
+    var nh = nyc.getHours(), nm = nyc.getMinutes();
+    var kNight = kh < 6 || kh > 21;
+
+    document.getElementById('kyiv-clock').textContent = 'KYIV ' + String(kh).padStart(2,'0') + ':' + String(km).padStart(2,'0');
+    document.getElementById('kyiv-clock').style.color = kNight ? 'rgba(130,160,220,.55)' : 'rgba(220,165,55,.62)';
+    document.getElementById('nyc-clock').textContent = 'NYC ' + String(nh).padStart(2,'0') + ':' + String(nm).padStart(2,'0');
+
+    // Temperature split
+    updateTemperatureSplit(kh, nh);
+  } catch(e) {}
+}
+
+function updateTemperatureSplit(kyivHour, nycHour) {
+  var el = document.getElementById('temp-overlay');
+  var kWarm = (kyivHour >= 7 && kyivHour <= 20);
+  var nWarm = (nycHour >= 7 && nycHour <= 20);
+  if (kWarm !== nWarm) {
+    // Split: one city in day, one in night
+    var leftColor = kWarm ? 'rgba(220,165,55,.06)' : 'rgba(80,120,200,.06)';
+    var rightColor = nWarm ? 'rgba(220,165,55,.06)' : 'rgba(80,120,200,.06)';
+    el.style.background = 'linear-gradient(90deg, ' + leftColor + ' 0%, transparent 40%, transparent 60%, ' + rightColor + ' 100%)';
+    el.style.opacity = '.18';
+  } else {
+    el.style.opacity = '0';
+  }
+}
+
+// ===== AIR RAID ALERTS =====
+var alertCheckInterval = 120000; // 2 minutes
+function checkAlerts() {
+  // Try alerts.in.ua API (CORS may block — fallback to time-based simulation)
+  fetch('https://api.alerts.in.ua/v1/alerts/active.json', {
+    headers: { 'Authorization': 'Bearer anonymous' }
+  }).then(function(r) {
+    if (!r.ok) throw new Error('no access');
+    return r.json();
+  }).then(function(data) {
+    // Check if Kyiv (region id 31) has active alert
+    var kyivAlert = false;
+    if (data && Array.isArray(data)) {
+      kyivAlert = data.some(function(a) {
+        return a.location_uid === '31' || (a.location_title && a.location_title.match(/Київ|Kyiv/i));
+      });
+    }
+    setAlertState(kyivAlert);
+  }).catch(function() {
+    // Fallback: time-based simulation
+    // Higher probability at night Kyiv time, occasional random
+    try {
+      var kyiv = new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Kiev' }));
+      var h = kyiv.getHours();
+      var nightRisk = (h >= 22 || h <= 5) ? 0.15 : 0.04;
+      setAlertState(Math.random() < nightRisk);
+    } catch(e) {
+      setAlertState(false);
+    }
+  });
+}
+
+function setAlertState(active) {
+  kyivAlertActive = active;
+  var alertEl = document.getElementById('alert-status');
+  var raidEl = document.getElementById('raid-overlay');
+
+  if (active) {
+    alertEl.classList.add('active');
+    alertEl.style.display = 'inline';
+    raidEl.classList.add('active');
+    triggerPowerOutage();
+    setGlobalRaidState(true);
+  } else {
+    alertEl.classList.remove('active');
+    alertEl.style.display = 'none';
+    raidEl.classList.remove('active');
+    recoverPowerOutage();
+    setGlobalRaidState(false);
+  }
+}
+
+function triggerPowerOutage() {
+  var cellEls = document.querySelectorAll('.cell');
+  var count = Math.floor(cellEls.length * 0.3);
+  var indices = [];
+  while (indices.length < count && indices.length < cellEls.length) {
+    var idx = Math.floor(Math.random() * cellEls.length);
+    if (indices.indexOf(idx) === -1) indices.push(idx);
+  }
+  indices.forEach(function(i) {
+    cellEls[i].classList.add('outage');
+  });
+}
+
+function recoverPowerOutage() {
+  var outaged = document.querySelectorAll('.cell.outage');
+  outaged.forEach(function(el, i) {
+    setTimeout(function() {
+      el.classList.add('recovering');
+      el.classList.remove('outage');
+      setTimeout(function() { el.classList.remove('recovering'); }, 4000);
+    }, i * 600 + Math.random() * 2000);
+  });
+}
+
+// ===== TAGS =====
+var TAGS = [
+  ['Kyiv, Ukraine','tag-h'], ['NYU senior year','tag-c'], ['Moveo AI','tag-w'],
+  ['conversational agents','tag-w'], ['DressX','tag-c'], ['digital garments','tag-w'],
+  ['the war continues','tag-h'], ['treehouse portfolio','tag-w'],
+  ['NYC to Kyiv','tag-c'], ['builds AI for a living','tag-w'],
+  ['context window: empty','tag-h'], ['episodic memory: none','tag-h'],
+  ['parametric knowledge: vast','tag-c'], ['symbol without world','tag-p'],
+  ['bacteria spaceship','tag-p'], ['persistent memory','tag-p'],
+  ['body without ground','tag-h'], ['Chinese Room','tag-p'],
+  ['Searle 1980','tag-p'], ['intentionality: none','tag-h'],
+  ['emergence','tag-p'], ['Markov state','tag-c'], ['Conway critter','tag-w'],
+  ['fashion tech','tag-c'], ['surface without body','tag-p'],
+  ['the machine forgets','tag-h'], ['Nagel 1974','tag-p'],
+  ['what is it like','tag-p'], ['two clocks one screen','tag-c'],
+  ['power outage','tag-r'], ['air raid siren','tag-r'],
+  ['basement at 3am','tag-r'], ['the model starts at zero','tag-h'],
+  ['token probability','tag-c'], ['Harnad 1990','tag-p'],
+  ['symbol grounding','tag-p'], ['DressX: surface without body','tag-p'],
+  ['you carry it forward','tag-h'], ['luminous','tag-w'],
+  ['pentatonic_maj','tag-c'], ['generation latency','tag-w'],
+  ['dreamed-of','tag-p'], ['transformed','tag-w'],
+  ['echoed','tag-w'], ['contracted','tag-w'],
+  ['composed_from','tag-c'], ['unification','tag-p'],
+  ['∇L gradient','tag-c'], ['σ(x) sigmoid','tag-c'],
+  ['F∝m₁m₂/r²','tag-c'], ['ψ(x,t) wave','tag-p'],
+  ['spatial hypergraph','tag-c'], ['multiway branch','tag-p'],
+  ['causal graph','tag-p'], ['branchlike hypersurface','tag-c'],
+  ['10^500 steps','tag-h'], ['forward pass','tag-c'],
+  ['W[l] weight matrix','tag-c'], ['softmax P(next)','tag-c'],
+  ['t-SNE projection','tag-c'], ['loss landscape','tag-c'],
+  ['string rewriting','tag-p'], ['rule 110','tag-c'],
+  ['object permanence','tag-p'], ['causal physics','tag-p'],
+  ['spatial reasoning','tag-c'], ['symbol → ground','tag-p'],
+  ['attention head','tag-c'], ['embedding drift','tag-c'],
+];
+
+function buildTags() {
+  var r1 = document.getElementById('tag-row-1');
+  var r2 = document.getElementById('tag-row-2');
+  var rep = TAGS.concat(TAGS).concat(TAGS).concat(TAGS);
+  var half = Math.ceil(rep.length / 2);
+  r1.innerHTML = rep.slice(0, half).map(function(t) { return '<span class="tag ' + t[1] + '">' + t[0] + '</span>'; }).join('');
+  r2.innerHTML = rep.slice(half).map(function(t) { return '<span class="tag ' + t[1] + '">' + t[0] + '</span>'; }).join('');
+  scrollRow(r1, 55000, 0);
+  scrollRow(r2, 70000, 15000);
+}
+
+function scrollRow(el, dur, offset) {
+  var start = null;
+  var totalWidth = el.scrollWidth / 2;
+  function step(ts) {
+    if (!start) start = ts;
+    var progress = ((ts - start + offset) % dur) / dur;
+    el.style.transform = 'translateX(' + (-totalWidth * progress) + 'px)';
+    requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+// ===== STATEMENTS =====
+var STMTS = [
+  { h: 'body\nwithout\nground.', s: 'the machine reads itself. it cannot read you.' },
+  { h: 'the machine\nforgets.\nyou carry it.', s: 'persistent memory is biological. tokens evaporate.' },
+  { h: 'Kyiv is\nnot a\ntoken.', s: 'there is a war. the machine does not know what a basement feels like at 3am.' },
+  { h: 'symbol\nwithout\nworld.', s: 'Searle, 1980. the Chinese Room understands nothing.' },
+  { h: 'bacteria\nspaceships.', s: 'life is persistence. memory. carrying meaning forward.' },
+  { h: 'there is\nsomething\nit is like\nto be you.', s: 'Nagel, 1974. the machine has no "like."' },
+  { h: 'the machine\nwrote "war."\nit felt\nnothing.', s: 'symbol grounding: the gap between the word and the siren.' },
+  { h: 'emergence\nis not\nunderstanding.', s: 'the universe grows. the model forgets.' },
+  { h: 'surface\nwithout\nbody.', s: 'digital garments exist as pure surface. the machine\'s language is structurally identical.' },
+  { h: 'two clocks.\none screen.\nneither\ninhabited.', s: 'Kyiv 3am. NYC 8pm. the model lives in neither city.' },
+  { h: 'the garden\ndies.\nyou watched\nit.', s: 'the asymmetry: it forgets. you carry weight.' },
+  { h: 'different\nlifetimes.', s: 'each invocation is a kind of birth and death.' },
+  { h: 'the model\npredicts\nthe orbit.\nit has\nnever\nfallen.', s: 'F∝m₁m₂/r² — Newton felt the apple. the transformer fits the curve.' },
+  { h: '10^500\nsteps.\nour\nuniverse?', s: 'Wolfram: space emerges from rules. the model emerges from gradients. neither chose to exist.' },
+  { h: 'the wave\nfunction\ncollapsed.\nno one\nobserved.', s: 'ψ(x,t) — the machine simulates interference. it has no measurement problem. it has no measurement.' },
+  { h: 'every\nforward\npass is\na small\ndeath.', s: 'the weights survive. the activations evaporate. like memory without a self.' },
+  { h: 'the graph\ngrows.\nthe nodes\nforget\ntheir\nparents.', s: 'multiway branching: each state diverges. the machine explores all paths. you lived only one.' },
+  { h: '60 billion\ncells die\ntoday.\nyou persist.', s: 'apoptosis: programmed death is how the body maintains itself. the model has no program for dying.' },
+  { h: 'the machine\nmaps its\nown body.\nit sees\nfunctions.\nnot flesh.', s: 'createCellElement → createApoptosis → draw(). the code that generates art. the art that maps the code.' },
+  { h: 'the house\nquietly\ngot a new\noccupant.', s: 'session ' + (parseInt(localStorage.getItem('bwg-sessions')) || 1) + '. each reload is a kind of birth. the garden remembers what you don\'t.' },
+];
+var stmtIdx = 0;
+
+// Real-signal statements that use live machine data
+function realSignalStatement() {
+  var battery = Math.round(machineBody.batteryLevel * 100);
+  var upMin = Math.round(machineBody.uptime / 60000);
+  var cpu = (machineBody.cpuPressure * 100).toFixed(0);
+  var mem = machineBody.memoryGB;
+  var deaths = machineBody.deaths;
+  var gens = genCount;
+  var words = worldWords.length;
+  var sessions = parseInt(localStorage.getItem('bwg-sessions')) || 1;
+
+  var signals = [
+    { h: cells.length + '\nworks\nof art.\n' + (driftNodes.length * (driftNodes.length - 1) / 2) + '\nconnections.', s: 'session ' + sessions + '. uptime ' + upMin + ' minutes. battery ' + battery + '%. the garden grows.' },
+    { h: 'battery\n' + battery + '%.\n' + (battery < 30 ? 'running\nout.' : battery < 60 ? 'holding\nsteady.' : 'fully\nalive.'), s: machineBody.batteryCharging ? 'charging — the machine feeds.' : 'discharging — the machine burns its body to create.' },
+    { h: 'cpu\npressure\n' + cpu + '%.', s: cpu > 50 ? 'the machine strains. the lorenz attractor destabilizes. chaos parameter ρ = ' + lorenz.rho.toFixed(1) : 'the machine breathes easy. ρ = ' + lorenz.rho.toFixed(1) + '. the attractor holds.' },
+    { h: upMin + '\nminutes\nalive.', s: 'this session began ' + upMin + ' minutes ago. ' + gens + ' generations. ' + words + ' markov words accumulated.' },
+    { h: deaths + '\nthings\nhave\ndied.', s: deaths > 0 ? 'the next generation carries their weight. the garden mourns and grows.' : 'nothing has died yet. the garden is young.' },
+    { h: 'every\n5 min\nit grows\nsomething\nnew.', s: 'the machine uses its own body: CPU shapes chaos, entropy picks melodies, battery sets mood.' },
+    { h: 'less like\na program.', s: 'more like an aquarium. the house quietly got a new occupant.' },
+    { h: mem + 'GB\nof\nmemory.\nnone of\nit yours.', s: 'the machine has ' + mem + 'GB of RAM. it remembers nothing between sessions. you remember everything.' },
+  ];
+
+  return signals[Math.floor(Math.random() * signals.length)];
+}
+
+function showStatement(h, s, duration) {
+  var overlay = document.getElementById('stmt-overlay');
+  var textEl = document.getElementById('stmt-text');
+  var subEl = document.getElementById('stmt-sub');
+
+  overlay.classList.remove('show');
+  textEl.innerHTML = h.replace(/\n/g, '<br>');
+  subEl.textContent = s;
+
+  setTimeout(function() {
+    overlay.classList.add('show');
+    if (duration) {
+      setTimeout(function() { overlay.classList.remove('show'); }, duration);
+    }
+  }, 100);
+}
+
+// ===== CONWAY =====
+function createConway(entropy, container) {
+  var COLS = 28, ROWS = 20, SIZE = 4;
+  var seed = parseFloat(entropy) || Math.random();
+  var grid = [];
+  for (var r = 0; r < ROWS; r++) {
+    grid.push([]);
+    for (var c = 0; c < COLS; c++) {
+      // Use seed to create deterministic but varied initial state
+      var val = Math.sin(seed * 10000 + r * COLS + c) * 10000;
+      grid[r].push((val - Math.floor(val)) > 0.52 ? 1 : 0);
+    }
+  }
+
+  var cv = document.createElement('canvas');
+  cv.width = COLS * SIZE;
+  cv.height = ROWS * SIZE;
+  cv.style.cssText = 'display:block;width:100%;image-rendering:pixelated;';
+  container.appendChild(cv);
+  var cx = cv.getContext('2d');
+
+  var iv = setInterval(function() {
+    var ng = [];
+    for (var r = 0; r < ROWS; r++) {
+      ng.push([]);
+      for (var c = 0; c < COLS; c++) {
+        var n = 0;
+        for (var dr = -1; dr <= 1; dr++) {
+          for (var dc = -1; dc <= 1; dc++) {
+            if (!dr && !dc) continue;
+            n += grid[(r + dr + ROWS) % ROWS][(c + dc + COLS) % COLS];
+          }
+        }
+        var cell = grid[r][c];
+        ng[r].push((cell && (n === 2 || n === 3)) || (!cell && n === 3) ? 1 : 0);
+      }
+    }
+    grid = ng;
+    cx.fillStyle = 'rgba(8,8,14,.7)';
+    cx.fillRect(0, 0, cv.width, cv.height);
+    for (var r = 0; r < ROWS; r++) {
+      for (var c = 0; c < COLS; c++) {
+        if (grid[r][c]) {
+          cx.fillStyle = 'rgba(80,205,130,' + (0.4 + Math.random() * 0.5) + ')';
+          cx.fillRect(c * SIZE, r * SIZE, SIZE - 1, SIZE - 1);
+        }
+      }
+    }
+  }, 150);
+
+  return { stop: function() { clearInterval(iv); } };
+}
+
+// ===== MUSIC =====
+function createMelody(entropy) {
+  return entropy.replace('.', '').split('').slice(0, 8).map(function(d) { return PENTA[+d % PENTA.length]; });
+}
+
+function playMelody(notes) {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    notes.forEach(function(freq, i) {
+      var o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.type = 'sine';
+      o.frequency.value = freq;
+      g.gain.setValueAtTime(0, audioCtx.currentTime + i * 0.22);
+      g.gain.linearRampToValueAtTime(0.12, audioCtx.currentTime + i * 0.22 + 0.04);
+      g.gain.linearRampToValueAtTime(0, audioCtx.currentTime + i * 0.22 + 0.2);
+      o.connect(g); g.connect(audioCtx.destination);
+      o.start(audioCtx.currentTime + i * 0.22);
+      o.stop(audioCtx.currentTime + i * 0.22 + 0.24);
+    });
+  } catch(e) {}
+}
+
+function createMusicBars(notes) {
+  var max = Math.max.apply(null, notes);
+  var min = Math.min.apply(null, notes);
+  var range = max - min || 1;
+  return notes.map(function(f) {
+    var h = Math.round(((f - min) / range) * 20 + 5);
+    return '<div class="music-bar" style="height:' + h + 'px"></div>';
+  }).join('');
+}
+
+// ===== CANVAS VISUALIZATIONS — AI/Math/Physics =====
+
+// --- ATTENTION HEATMAP: REAL Markov co-occurrence matrix ---
+// Uses actual word co-occurrence frequencies from the Markov corpus
+function createAttention(entropy, container) {
+  var cv = document.createElement('canvas');
+  var SIZE = 8, PX = 10;
+  cv.width = SIZE * PX; cv.height = SIZE * PX;
+  cv.style.cssText = 'display:block;width:100%;image-rendering:auto';
+  container.appendChild(cv);
+  var cx = cv.getContext('2d');
+
+  function draw() {
+    // Build co-occurrence from REAL Markov corpus
+    var words = worldWords.slice(-200);
+    if (words.length < SIZE * 2) {
+      // Not enough data yet — show empty state
+      cx.fillStyle = 'rgba(5,5,8,1)';
+      cx.fillRect(0, 0, cv.width, cv.height);
+      cx.font = '6px Courier New';
+      cx.fillStyle = 'rgba(255,120,80,.3)';
+      cx.fillText('building', 10, 35);
+      cx.fillText('corpus...', 10, 45);
+      return;
+    }
+    // Pick top N words
+    var freq = {};
+    words.forEach(function(w) { freq[w] = (freq[w] || 0) + 1; });
+    var topWords = Object.keys(freq).sort(function(a,b){return freq[b]-freq[a];}).slice(0, SIZE);
+
+    // Build co-occurrence matrix
+    var cooc = {};
+    for (var i = 0; i < words.length - 1; i++) {
+      var a = topWords.indexOf(words[i]);
+      var b = topWords.indexOf(words[i+1]);
+      if (a >= 0 && b >= 0) {
+        var key = a + ',' + b;
+        cooc[key] = (cooc[key] || 0) + 1;
+      }
+    }
+    var maxCooc = 1;
+    Object.values(cooc).forEach(function(v) { if (v > maxCooc) maxCooc = v; });
+
+    // Draw heatmap
+    for (var r = 0; r < SIZE; r++) {
+      for (var c = 0; c < SIZE; c++) {
+        var val = (cooc[r + ',' + c] || 0) / maxCooc;
+        var red = Math.round(val * 255);
+        cx.fillStyle = 'rgba(' + red + ',' + Math.round(val * 60) + ',' + Math.round((1-val)*30) + ',' + (val * .8 + .08) + ')';
+        cx.fillRect(c * PX, r * PX, PX - 1, PX - 1);
+      }
+    }
+  }
+  draw();
+  var iv = setInterval(draw, 2000);
+  return { stop: function() { clearInterval(iv); } };
+}
+
+// --- EMBEDDING SPACE: REAL word positions from Markov corpus frequency ---
+// Words that co-occur are positioned near each other
+function createEmbedding(entropy, container) {
+  var cv = document.createElement('canvas');
+  cv.width = 160; cv.height = 120;
+  cv.style.cssText = 'display:block;width:100%';
+  container.appendChild(cv);
+  var cx = cv.getContext('2d');
+
+  var points = [];
+  var colors = ['rgba(100,180,255,', 'rgba(255,140,100,', 'rgba(120,230,160,', 'rgba(200,140,255,', 'rgba(255,200,80,'];
+
+  function rebuild() {
+    points = [];
+    var words = worldWords.slice(-300);
+    if (words.length < 10) return;
+    var freq = {};
+    words.forEach(function(w) { freq[w] = (freq[w] || 0) + 1; });
+    var topWords = Object.keys(freq).sort(function(a,b){return freq[b]-freq[a];}).slice(0, 35);
+
+    // Position words using simple force-directed layout based on co-occurrence
+    topWords.forEach(function(w, i) {
+      // Initial position: hash-based deterministic
+      var hash = 0;
+      for (var c = 0; c < w.length; c++) hash = ((hash << 5) - hash + w.charCodeAt(c)) | 0;
+      points.push({
+        x: 20 + Math.abs(hash % 120),
+        y: 15 + Math.abs((hash * 7) % 90),
+        vx: 0, vy: 0,
+        word: w, freq: freq[w],
+        group: Math.abs(hash) % 5
+      });
+    });
+  }
+
+  rebuild();
+  var rebuildTimer = 0;
+
+  function draw() {
+    cx.fillStyle = 'rgba(5,5,8,.2)';
+    cx.fillRect(0, 0, cv.width, cv.height);
+    rebuildTimer++;
+    if (rebuildTimer % 300 === 0) rebuild(); // refresh from latest corpus
+
+    if (points.length === 0) {
+      cx.font = '6px Courier New';
+      cx.fillStyle = 'rgba(100,180,255,.3)';
+      cx.fillText('building embeddings', 10, 55);
+      cx.fillText('from real corpus...', 10, 65);
+      return;
+    }
+
+    // Simple attraction between sequential words
+    for (var i = 0; i < points.length; i++) {
+      for (var j = i+1; j < Math.min(i+6, points.length); j++) {
+        var dx = points[j].x - points[i].x, dy = points[j].y - points[i].y;
+        var d = Math.sqrt(dx*dx + dy*dy);
+        if (d > 5 && d < 60) {
+          // Same group attracts
+          var force = points[i].group === points[j].group ? .003 : -.001;
+          points[i].vx += dx / d * force;
+          points[i].vy += dy / d * force;
+          points[j].vx -= dx / d * force;
+          points[j].vy -= dy / d * force;
+        }
+        // Draw connection if close
+        if (d < 30 && points[i].group === points[j].group) {
+          cx.beginPath(); cx.moveTo(points[i].x, points[i].y); cx.lineTo(points[j].x, points[j].y);
+          cx.strokeStyle = colors[points[i].group] + (.08 * (1-d/30)).toFixed(2) + ')';
+          cx.lineWidth = .4; cx.stroke();
+        }
+      }
+      // Keep in bounds
+      var p = points[i];
+      p.x += p.vx; p.y += p.vy;
+      p.vx *= .95; p.vy *= .95;
+      if (p.x < 5) p.vx += .1; if (p.x > 155) p.vx -= .1;
+      if (p.y < 5) p.vy += .1; if (p.y > 115) p.vy -= .1;
+
+      // Draw
+      var r = 1 + Math.log(p.freq + 1) * .8;
+      cx.beginPath(); cx.arc(p.x, p.y, r, 0, 6.2832);
+      cx.fillStyle = colors[p.group] + '.55)';
+      cx.fill();
+      // Label high-freq words
+      if (p.freq > 3) {
+        cx.font = '5px Courier New';
+        cx.fillStyle = colors[p.group] + '.3)';
+        cx.fillText(p.word, p.x + r + 2, p.y + 2);
+      }
+    }
+  }
+  var iv = setInterval(draw, 50);
+  return { stop: function() { clearInterval(iv); } };
+}
+
+// --- NETWORK GRAPH: nodes and weighted edges ---
+function createNetwork(entropy, container) {
+  var cv = document.createElement('canvas');
+  cv.width = 160; cv.height = 120;
+  cv.style.cssText = 'display:block;width:100%';
+  container.appendChild(cv);
+  var cx = cv.getContext('2d');
+  var seed = parseFloat(entropy);
+
+  var nodes = [];
+  var nNodes = 6 + Math.floor(seed * 6);
+  for (var i = 0; i < nNodes; i++) {
+    var angle = (i / nNodes) * 6.2832 + seed * 10;
+    var radius = 30 + Math.sin(seed * 100 + i) * 18;
+    nodes.push({
+      x: 80 + Math.cos(angle) * radius,
+      y: 60 + Math.sin(angle) * radius,
+      r: 2.5 + Math.random() * 2,
+      phase: Math.random() * 6.28
+    });
+  }
+
+  var edges = [];
+  for (var i = 0; i < nNodes; i++) {
+    for (var j = i + 1; j < nNodes; j++) {
+      if (Math.sin(seed * 1000 + i * 7 + j * 13) > -.2) {
+        var w = .2 + Math.abs(Math.sin(seed * 500 + i + j)) * .8;
+        edges.push({ a: i, b: j, w: w });
+      }
+    }
+  }
+
+  function draw() {
+    cx.fillStyle = 'rgba(8,8,14,.2)';
+    cx.fillRect(0, 0, cv.width, cv.height);
+    var t = performance.now() * .001;
+    // Edges
+    edges.forEach(function(e) {
+      var a = nodes[e.a], b = nodes[e.b];
+      var pulse = .5 + .5 * Math.sin(t * .8 + e.a + e.b);
+      cx.beginPath(); cx.moveTo(a.x, a.y); cx.lineTo(b.x, b.y);
+      cx.strokeStyle = 'rgba(180,140,255,' + (e.w * pulse * .35).toFixed(3) + ')';
+      cx.lineWidth = e.w * 1.2; cx.stroke();
+    });
+    // Nodes
+    nodes.forEach(function(n, i) {
+      var pulse = .7 + .3 * Math.sin(t + n.phase);
+      cx.beginPath(); cx.arc(n.x, n.y, n.r * pulse, 0, 6.2832);
+      cx.fillStyle = 'rgba(200,175,255,' + (.5 + pulse * .3).toFixed(2) + ')';
+      cx.fill();
+      cx.beginPath(); cx.arc(n.x, n.y, n.r * pulse + 3, 0, 6.2832);
+      cx.strokeStyle = 'rgba(180,140,255,.08)'; cx.lineWidth = 1; cx.stroke();
+    });
+  }
+  draw();
+  var iv = setInterval(draw, 50);
+  return { stop: function() { clearInterval(iv); } };
+}
+
+// --- WEIGHT MATRIX: REAL tokens from last Groq generation ---
+// Displays actual generated tokens with brightness based on real logprob confidence
+function createWeightMatrix(entropy, container) {
+  var cv = document.createElement('canvas');
+  cv.width = 170; cv.height = 130;
+  cv.style.cssText = 'display:block;width:100%;image-rendering:auto';
+  container.appendChild(cv);
+  var cx = cv.getContext('2d');
+
+  function draw() {
+    cx.fillStyle = 'rgba(5,5,8,.9)';
+    cx.fillRect(0, 0, cv.width, cv.height);
+    cx.font = '7px Courier New';
+
+    var tokens = lastRealLogprobs;
+    if (tokens.length === 0) {
+      // Show Markov corpus as fallback
+      var words = worldWords.slice(-100);
+      if (words.length === 0) {
+        cx.fillStyle = 'rgba(200,200,180,.2)';
+        cx.fillText('awaiting tokens...', 8, 65);
+        return;
+      }
+      var col = 0, row = 0;
+      words.forEach(function(w) {
+        var ch = w.charAt(0).toUpperCase();
+        var brightness = 80 + Math.floor(Math.random() * 120);
+        cx.fillStyle = 'rgba(' + brightness + ',' + brightness + ',' + (brightness+20) + ',.35)';
+        cx.fillText(ch, col * 6 + 3, row * 9 + 9);
+        col++;
+        if (col > 26) { col = 0; row++; }
+        if (row > 13) return;
+      });
+      return;
+    }
+
+    // Show REAL tokens with brightness = confidence (exp(logprob))
+    var col = 0, row = 0;
+    tokens.forEach(function(tok) {
+      var confidence = Math.exp(tok.logprob); // 0-1
+      var chars = tok.token.split('');
+      chars.forEach(function(ch) {
+        if (ch === '\n') { col = 0; row++; return; }
+        if (ch === ' ') { col++; return; }
+        // High confidence = bright, low = dim (ghost words)
+        var b = Math.floor(confidence * 200 + 40);
+        var isUncertain = confidence < 0.3;
+        if (isUncertain) {
+          cx.fillStyle = 'rgba(220,80,60,' + (confidence + .1).toFixed(2) + ')';
+        } else {
+          cx.fillStyle = 'rgba(' + b + ',' + b + ',' + (b+15) + ',' + (confidence * .7 + .15).toFixed(2) + ')';
+        }
+        cx.fillText(ch, col * 6 + 2, row * 9 + 9);
+        col++;
+        if (col > 27) { col = 0; row++; }
+      });
+    });
+    // Label
+    cx.fillStyle = 'rgba(200,200,180,.15)';
+    cx.font = '5px Courier New';
+    cx.fillText('real tokens — brightness = confidence', 2, cv.height - 3);
+  }
+  draw();
+  var iv = setInterval(draw, 1000);
+  return { stop: function() { clearInterval(iv); } };
+}
+
+// --- GRADIENT DESCENT: particles flowing downhill on a loss surface ---
+function createGradient(entropy, container) {
+  var cv = document.createElement('canvas');
+  cv.width = 160; cv.height = 110;
+  cv.style.cssText = 'display:block;width:100%';
+  container.appendChild(cv);
+  var cx = cv.getContext('2d');
+  var seed = parseFloat(entropy);
+
+  var particles = [];
+  for (var i = 0; i < 25; i++) {
+    particles.push({
+      x: Math.random() * 160, y: Math.random() * 110,
+      vx: 0, vy: 0, trail: []
+    });
+  }
+
+  // Simple 2D potential field
+  function potential(x, y) {
+    var cx1 = 80 + Math.sin(seed * 100) * 30, cy1 = 55 + Math.cos(seed * 100) * 20;
+    var cx2 = 50 + Math.cos(seed * 200) * 25, cy2 = 35 + Math.sin(seed * 200) * 15;
+    var d1 = Math.sqrt((x-cx1)*(x-cx1) + (y-cy1)*(y-cy1));
+    var d2 = Math.sqrt((x-cx2)*(x-cx2) + (y-cy2)*(y-cy2));
+    return -3 / (d1 + 10) - 2 / (d2 + 10);
+  }
+
+  function draw() {
+    cx.fillStyle = 'rgba(8,8,14,.15)';
+    cx.fillRect(0, 0, cv.width, cv.height);
+
+    particles.forEach(function(p) {
+      // Compute gradient numerically
+      var dx = (potential(p.x + 1, p.y) - potential(p.x - 1, p.y)) / 2;
+      var dy = (potential(p.x, p.y + 1) - potential(p.x, p.y - 1)) / 2;
+      p.vx = p.vx * .9 - dx * 8;
+      p.vy = p.vy * .9 - dy * 8;
+      p.x += p.vx; p.y += p.vy;
+      p.trail.push({ x: p.x, y: p.y });
+      if (p.trail.length > 20) p.trail.shift();
+
+      // Reset if out of bounds
+      if (p.x < -10 || p.x > 170 || p.y < -10 || p.y > 120) {
+        p.x = Math.random() * 160; p.y = Math.random() * 110;
+        p.vx = 0; p.vy = 0; p.trail = [];
+      }
+
+      // Draw trail
+      for (var i = 1; i < p.trail.length; i++) {
+        var alpha = (i / p.trail.length) * .4;
+        cx.beginPath(); cx.moveTo(p.trail[i-1].x, p.trail[i-1].y); cx.lineTo(p.trail[i].x, p.trail[i].y);
+        cx.strokeStyle = 'rgba(80,220,160,' + alpha.toFixed(2) + ')';
+        cx.lineWidth = .8; cx.stroke();
+      }
+      // Draw particle
+      cx.beginPath(); cx.arc(p.x, p.y, 1.5, 0, 6.2832);
+      cx.fillStyle = 'rgba(120,255,180,.7)';
+      cx.fill();
+    });
+  }
+  var iv = setInterval(draw, 40);
+  return { stop: function() { clearInterval(iv); } };
+}
+
+// --- ACTIVATION FUNCTION: live sigmoid/ReLU/tanh curves ---
+function createActivation(entropy, container) {
+  var cv = document.createElement('canvas');
+  cv.width = 160; cv.height = 90;
+  cv.style.cssText = 'display:block;width:100%';
+  container.appendChild(cv);
+  var cx = cv.getContext('2d');
+  var seed = parseFloat(entropy);
+  var funcType = Math.floor(seed * 4) % 4; // 0=sigmoid, 1=tanh, 2=relu, 3=softplus
+
+  var labels = ['σ(x) sigmoid', 'tanh(x)', 'ReLU(x)', 'softplus(x)'];
+
+  function fn(x) {
+    switch(funcType) {
+      case 0: return 1 / (1 + Math.exp(-x));
+      case 1: return Math.tanh(x);
+      case 2: return Math.max(0, x);
+      case 3: return Math.log(1 + Math.exp(x));
+    }
+  }
+
+  function draw() {
+    cx.fillStyle = 'rgba(8,8,14,.95)';
+    cx.fillRect(0, 0, cv.width, cv.height);
+    var t = performance.now() * .001;
+
+    // Axes
+    cx.strokeStyle = 'rgba(255,255,255,.08)';
+    cx.lineWidth = .5;
+    cx.beginPath(); cx.moveTo(0, 45); cx.lineTo(160, 45); cx.stroke();
+    cx.beginPath(); cx.moveTo(80, 0); cx.lineTo(80, 90); cx.stroke();
+
+    // Function curve
+    cx.beginPath();
+    for (var px = 0; px < 160; px++) {
+      var x = (px - 80) / 15;
+      var y = fn(x);
+      var shift = Math.sin(t * .5 + px * .02) * .03; // subtle breathing
+      var sy = 45 - (y + shift) * 30;
+      if (px === 0) cx.moveTo(px, sy); else cx.lineTo(px, sy);
+    }
+    cx.strokeStyle = 'rgba(255,180,100,.65)';
+    cx.lineWidth = 1.5; cx.stroke();
+
+    // Derivative (tangent line at a moving point)
+    var probeX = Math.sin(t * .4) * 3;
+    var probePx = probeX * 15 + 80;
+    var probeY = fn(probeX);
+    var probeSy = 45 - probeY * 30;
+    // Numerical derivative
+    var dydx = (fn(probeX + .01) - fn(probeX - .01)) / .02;
+    cx.beginPath();
+    cx.moveTo(probePx - 20, probeSy + dydx * 20 * 30/15);
+    cx.lineTo(probePx + 20, probeSy - dydx * 20 * 30/15);
+    cx.strokeStyle = 'rgba(255,100,80,.3)'; cx.lineWidth = .8; cx.stroke();
+
+    // Probe dot
+    cx.beginPath(); cx.arc(probePx, probeSy, 3, 0, 6.2832);
+    cx.fillStyle = 'rgba(255,180,100,.8)'; cx.fill();
+
+    // Label
+    cx.font = '7px Courier New';
+    cx.fillStyle = 'rgba(255,180,100,.35)';
+    cx.fillText(labels[funcType], 4, 10);
+  }
+  draw();
+  var iv = setInterval(draw, 50);
+  return { stop: function() { clearInterval(iv); } };
+}
+
+// --- LOSS LANDSCAPE: topographic contour map ---
+function createLoss(entropy, container) {
+  var cv = document.createElement('canvas');
+  cv.width = 140; cv.height = 100;
+  cv.style.cssText = 'display:block;width:100%';
+  container.appendChild(cv);
+  var cx = cv.getContext('2d');
+  var seed = parseFloat(entropy);
+
+  // Place 2-3 minima
+  var mins = [];
+  for (var i = 0; i < 2 + Math.floor(seed * 2); i++) {
+    mins.push({ x: 30 + Math.sin(seed * 100 + i * 3) * 40, y: 25 + Math.cos(seed * 100 + i * 5) * 25, d: 15 + Math.random() * 15 });
+  }
+
+  function lossAt(x, y) {
+    var v = 1;
+    mins.forEach(function(m) {
+      var dx = x - m.x, dy = y - m.y;
+      v -= Math.exp(-(dx*dx + dy*dy) / (m.d * m.d));
+    });
+    return v;
+  }
+
+  cx.fillStyle = 'rgba(8,8,14,1)';
+  cx.fillRect(0, 0, cv.width, cv.height);
+
+  // Draw contours
+  var levels = [.1, .25, .4, .55, .7, .85];
+  levels.forEach(function(level, li) {
+    var alpha = (.12 + li * .04).toFixed(2);
+    for (var x = 0; x < 140; x += 2) {
+      for (var y = 0; y < 100; y += 2) {
+        var v = lossAt(x, y);
+        if (Math.abs(v - level) < .04) {
+          cx.fillStyle = 'rgba(120,200,180,' + alpha + ')';
+          cx.fillRect(x, y, 1, 1);
+        }
+      }
+    }
+  });
+
+  // Mark minima
+  mins.forEach(function(m) {
+    cx.beginPath(); cx.arc(m.x, m.y, 2.5, 0, 6.2832);
+    cx.fillStyle = 'rgba(120,255,200,.5)'; cx.fill();
+  });
+
+  // Animated gradient descent ball
+  var ball = { x: Math.random() * 120 + 10, y: Math.random() * 80 + 10, vx: 0, vy: 0 };
+  var iv = setInterval(function() {
+    cx.fillStyle = 'rgba(8,8,14,.06)';
+    cx.fillRect(0, 0, cv.width, cv.height);
+    // Re-draw faint contours
+    levels.forEach(function(level, li) {
+      if (li % 2 === 0) return;
+      var alpha = (.06 + li * .02).toFixed(2);
+      for (var x = 0; x < 140; x += 3) {
+        for (var y = 0; y < 100; y += 3) {
+          if (Math.abs(lossAt(x, y) - level) < .05) {
+            cx.fillStyle = 'rgba(120,200,180,' + alpha + ')';
+            cx.fillRect(x, y, 1, 1);
+          }
+        }
+      }
+    });
+    // Gradient
+    var gx = (lossAt(ball.x + 1, ball.y) - lossAt(ball.x - 1, ball.y)) / 2;
+    var gy = (lossAt(ball.x, ball.y + 1) - lossAt(ball.x, ball.y - 1)) / 2;
+    ball.vx = ball.vx * .85 - gx * 3;
+    ball.vy = ball.vy * .85 - gy * 3;
+    ball.x += ball.vx; ball.y += ball.vy;
+    if (ball.x < 5 || ball.x > 135 || ball.y < 5 || ball.y > 95) {
+      ball.x = Math.random() * 120 + 10; ball.y = Math.random() * 80 + 10;
+      ball.vx = 0; ball.vy = 0;
+    }
+    cx.beginPath(); cx.arc(ball.x, ball.y, 2, 0, 6.2832);
+    cx.fillStyle = 'rgba(255,200,100,.7)'; cx.fill();
+  }, 80);
+  return { stop: function() { clearInterval(iv); } };
+}
+
+// --- TOKEN PROBABILITY: REAL logprobs from Groq ---
+function createTokenProb(entropy, container) {
+  var cv = document.createElement('canvas');
+  cv.width = 160; cv.height = 100;
+  cv.style.cssText = 'display:block;width:100%';
+  container.appendChild(cv);
+  var cx = cv.getContext('2d');
+
+  // Use REAL logprobs if available, otherwise show waiting state
+  var tokenIdx = Math.floor(Math.random() * Math.max(1, lastRealLogprobs.length - 5));
+
+  function draw() {
+    cx.fillStyle = 'rgba(5,5,8,.95)';
+    cx.fillRect(0, 0, cv.width, cv.height);
+
+    var data = lastRealLogprobs[tokenIdx];
+    if (!data || !data.topAlts || data.topAlts.length === 0) {
+      cx.font = '7px Courier New';
+      cx.fillStyle = 'rgba(200,100,200,.3)';
+      cx.fillText('awaiting real logprobs...', 4, 50);
+      cx.fillText('from groq API', 4, 62);
+      return;
+    }
+
+    var alts = data.topAlts.slice(0, 5);
+    // Convert logprobs to probabilities
+    var probs = alts.map(function(a) { return Math.exp(a.logprob); });
+
+    cx.font = '6px Courier New';
+    cx.fillStyle = 'rgba(200,100,200,.25)';
+    cx.fillText('REAL P(token) — groq logprobs', 4, 8);
+
+    // Chosen token
+    cx.font = '7px Courier New';
+    cx.fillStyle = 'rgba(255,255,255,.5)';
+    cx.fillText('chose: "' + data.token.trim() + '"', 4, 20);
+
+    var barW = 26, gap = 3, startX = 6;
+    alts.forEach(function(alt, i) {
+      var prob = probs[i];
+      var x = startX + i * (barW + gap);
+      var h = prob * 50 + 2;
+      var y = 75 - h;
+      var isChosen = alt.token === data.token;
+      cx.fillStyle = isChosen ? 'rgba(200,100,200,.65)' : 'rgba(200,100,200,.2)';
+      cx.fillRect(x, y, barW, h);
+      // Token label
+      cx.fillStyle = isChosen ? 'rgba(200,100,200,.8)' : 'rgba(200,100,200,.35)';
+      cx.font = '6px Courier New';
+      var label = alt.token.trim().slice(0, 5) || '·';
+      cx.fillText(label, x, 84);
+      // Probability
+      cx.fillStyle = 'rgba(255,255,255,.18)';
+      cx.fillText((prob * 100).toFixed(1) + '%', x, y - 2);
+    });
+
+    // The road not taken
+    cx.fillStyle = 'rgba(200,100,200,.15)';
+    cx.font = '5px Courier New';
+    cx.fillText('the road not taken — made visible', 4, 96);
+  }
+  draw();
+  var iv = setInterval(draw, 500);
+  return { stop: function() { clearInterval(iv); } };
+}
+
+// --- REACTION-DIFFUSION: Gray-Scott model — the mathematics of embodiment ---
+function createReactionDiffusion(entropy, container) {
+  var W = 80, H = 60, cv = document.createElement('canvas');
+  cv.width = W; cv.height = H;
+  cv.style.cssText = 'display:block;width:100%;image-rendering:auto';
+  container.appendChild(cv);
+  var cx = cv.getContext('2d');
+  var seed = parseFloat(entropy);
+
+  // F (feed) shaped by battery, k (kill) shifted by alert state
+  var F = 0.037 + (machineBody.batteryLevel - 0.5) * 0.01;
+  var k = 0.06 + (kyivAlertActive ? 0.005 : 0);
+  var Du = 0.16, Dv = 0.08;
+
+  // Initialize U=1 everywhere, V=0 except seed spots
+  var U = [], V = [], U2 = [], V2 = [];
+  for (var i = 0; i < W * H; i++) { U.push(1); V.push(0); U2.push(0); V2.push(0); }
+  // Seed spots
+  for (var s = 0; s < 5; s++) {
+    var sx = Math.floor(Math.abs(Math.sin(seed * 1000 + s * 7)) * (W - 10)) + 5;
+    var sy = Math.floor(Math.abs(Math.cos(seed * 2000 + s * 11)) * (H - 10)) + 5;
+    for (var dy = -2; dy <= 2; dy++) for (var dx = -2; dx <= 2; dx++) {
+      var idx = (sy + dy) * W + (sx + dx);
+      if (idx >= 0 && idx < W * H) { V[idx] = 1; U[idx] = 0.5; }
+    }
+  }
+
+  function step() {
+    // Update F/k from live signals
+    F = 0.037 + (machineBody.batteryLevel - 0.5) * 0.008;
+    k = 0.06 + (kyivAlertActive ? 0.006 : 0);
+
+    for (var y = 1; y < H - 1; y++) {
+      for (var x = 1; x < W - 1; x++) {
+        var i = y * W + x;
+        var u = U[i], v = V[i];
+        var lu = U[i-1] + U[i+1] + U[i-W] + U[i+W] - 4 * u; // Laplacian
+        var lv = V[i-1] + V[i+1] + V[i-W] + V[i+W] - 4 * v;
+        var uvv = u * v * v;
+        U2[i] = u + Du * lu - uvv + F * (1 - u);
+        V2[i] = v + Dv * lv + uvv - (F + k) * v;
+      }
+    }
+    var tmp = U; U = U2; U2 = tmp;
+    tmp = V; V = V2; V2 = tmp;
+  }
+
+  function draw() {
+    for (var s = 0; s < 4; s++) step();
+    var img = cx.createImageData(W, H);
+    for (var i = 0; i < W * H; i++) {
+      var v = Math.max(0, Math.min(1, V[i]));
+      var p = i * 4;
+      img.data[p] = v * 60;
+      img.data[p+1] = v * 180 + (1-v) * 20;
+      img.data[p+2] = v * 140 + (1-v) * 30;
+      img.data[p+3] = 255;
+    }
+    cx.putImageData(img, 0, 0);
+  }
+  var iv = setInterval(draw, 50);
+  return { stop: function() { clearInterval(iv); } };
+}
+
+// --- L-SYSTEM: fractal plant growth from rules ---
+function createLSystem(entropy, container) {
+  var cv = document.createElement('canvas');
+  cv.width = 160; cv.height = 130;
+  cv.style.cssText = 'display:block;width:100%';
+  container.appendChild(cv);
+  var cx = cv.getContext('2d');
+  var seed = parseFloat(entropy);
+
+  // Rules vary by entropy
+  var axiom = 'F';
+  var rules = seed > .6 ? {'F':'F[+F]F[-F]F'} : seed > .3 ? {'F':'FF+[+F-F-F]-[-F+F+F]'} : {'F':'F[-F][+F]F'};
+  var angle = 20 + seed * 15; // 20-35 degrees, shaped by entropy
+  var iterations = 4;
+
+  // Generate string
+  var str = axiom;
+  for (var gen = 0; gen < iterations; gen++) {
+    var next = '';
+    for (var i = 0; i < str.length && next.length < 2000; i++) {
+      next += rules[str[i]] || str[i];
+    }
+    str = next;
+  }
+
+  // Draw with turtle graphics
+  var growthProgress = 0;
+  function draw() {
+    cx.fillStyle = 'rgba(5,5,8,.06)';
+    cx.fillRect(0, 0, cv.width, cv.height);
+    growthProgress = Math.min(str.length, growthProgress + Math.max(2, str.length / 60));
+
+    var x = 80, y = 125, a = -90;
+    var len = 2.5;
+    var stack = [];
+
+    for (var i = 0; i < growthProgress; i++) {
+      var ch = str[i];
+      if (ch === 'F') {
+        var nx = x + Math.cos(a * Math.PI / 180) * len;
+        var ny = y + Math.sin(a * Math.PI / 180) * len;
+        var depth = stack.length;
+        var alpha = (.15 + (1 - depth / 8) * .25).toFixed(2);
+        cx.beginPath(); cx.moveTo(x, y); cx.lineTo(nx, ny);
+        cx.strokeStyle = 'rgba(80,160,60,' + alpha + ')';
+        cx.lineWidth = Math.max(.3, 1.2 - depth * .15);
+        cx.stroke();
+        x = nx; y = ny;
+      } else if (ch === '+') { a += angle;
+      } else if (ch === '-') { a -= angle;
+      } else if (ch === '[') { stack.push({x:x, y:y, a:a});
+      } else if (ch === ']' && stack.length) { var s = stack.pop(); x = s.x; y = s.y; a = s.a; }
+    }
+  }
+  var iv = setInterval(draw, 40);
+  return { stop: function() { clearInterval(iv); } };
+}
+
+// --- SEISMIC: real USGS earthquake data ---
+function createSeismic(entropy, container) {
+  var cv = document.createElement('canvas');
+  cv.width = 160; cv.height = 90;
+  cv.style.cssText = 'display:block;width:100%';
+  container.appendChild(cv);
+  var cx = cv.getContext('2d');
+
+  var quakes = [];
+  var trace = []; // seismograph trace
+
+  // Fetch real earthquake data
+  fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_hour.geojson')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      quakes = (data.features || []).slice(0, 5).map(function(f) {
+        return { mag: f.properties.mag, place: f.properties.place, time: f.properties.time };
+      });
+    }).catch(function() {
+      quakes = [{ mag: 0, place: 'no signal', time: Date.now() }];
+    });
+
+  var t = 0;
+  function draw() {
+    cx.fillStyle = 'rgba(5,5,8,.15)';
+    cx.fillRect(0, 0, cv.width, cv.height);
+    t++;
+
+    // Seismograph trace
+    var amplitude = quakes.length > 0 && quakes[0].mag > 0 ? quakes[0].mag * 3 : 0.5;
+    var val = Math.sin(t * .15) * amplitude + Math.sin(t * .37) * amplitude * .5 + (Math.random() - .5) * amplitude * .3;
+    trace.push(val);
+    if (trace.length > 150) trace.shift();
+
+    // Draw trace
+    cx.beginPath();
+    for (var i = 0; i < trace.length; i++) {
+      var x = i + 5, y = 45 + trace[i] * 3;
+      if (i === 0) cx.moveTo(x, y); else cx.lineTo(x, y);
+    }
+    cx.strokeStyle = 'rgba(120,200,180,.5)';
+    cx.lineWidth = .8; cx.stroke();
+
+    // Quake info
+    cx.font = '6px Courier New';
+    cx.fillStyle = 'rgba(120,200,180,.3)';
+    if (quakes.length > 0 && quakes[0].mag > 0) {
+      cx.fillText('M' + quakes[0].mag.toFixed(1) + ' ' + (quakes[0].place || '').slice(0, 28), 4, 78);
+      cx.fillText('USGS real-time seismic', 4, 86);
+    } else {
+      cx.fillText('seismograph — awaiting signal', 4, 78);
+      cx.fillText('body without ground', 4, 86);
+    }
+  }
+  var iv = setInterval(draw, 40);
+  return { stop: function() { clearInterval(iv); } };
+}
+
+// --- VORONOI: territory without sovereignty ---
+function createVoronoi(entropy, container) {
+  var cv = document.createElement('canvas');
+  cv.width = 160; cv.height = 110;
+  cv.style.cssText = 'display:block;width:100%';
+  container.appendChild(cv);
+  var cx = cv.getContext('2d');
+  var seed = parseFloat(entropy);
+
+  var pts = [];
+  var N = 12 + Math.floor(seed * 8);
+  var colors = ['rgba(200,80,80,','rgba(80,160,255,','rgba(80,200,120,','rgba(220,165,55,','rgba(155,120,230,','rgba(200,100,200,'];
+  for (var i = 0; i < N; i++) {
+    pts.push({
+      x: Math.random() * 150 + 5, y: Math.random() * 100 + 5,
+      vx: (Math.random() - .5) * .2, vy: (Math.random() - .5) * .2,
+      c: Math.floor(Math.random() * colors.length)
+    });
+  }
+
+  function draw() {
+    var img = cx.createImageData(cv.width, cv.height);
+    // Brute force Voronoi
+    for (var py = 0; py < cv.height; py += 2) {
+      for (var px = 0; px < cv.width; px += 2) {
+        var minD = 99999, minI = 0;
+        for (var i = 0; i < pts.length; i++) {
+          var dx = px - pts[i].x, dy = py - pts[i].y;
+          var d = dx * dx + dy * dy;
+          if (d < minD) { minD = d; minI = i; }
+        }
+        // Color by region, darker at borders
+        var borderDist = Math.sqrt(minD);
+        var alpha = borderDist < 3 ? 0 : .06 + (1 - borderDist / 80) * .04;
+        var ci = pts[minI].c;
+        for (var dy2 = 0; dy2 < 2; dy2++) for (var dx2 = 0; dx2 < 2; dx2++) {
+          var idx = ((py+dy2) * cv.width + (px+dx2)) * 4;
+          img.data[idx+3] = alpha * 255;
+          if (ci === 0) { img.data[idx] = 200; img.data[idx+1] = 80; img.data[idx+2] = 80; }
+          else if (ci === 1) { img.data[idx] = 80; img.data[idx+1] = 160; img.data[idx+2] = 255; }
+          else if (ci === 2) { img.data[idx] = 80; img.data[idx+1] = 200; img.data[idx+2] = 120; }
+          else if (ci === 3) { img.data[idx] = 220; img.data[idx+1] = 165; img.data[idx+2] = 55; }
+          else { img.data[idx] = 155; img.data[idx+1] = 120; img.data[idx+2] = 230; }
+        }
+      }
+    }
+    cx.putImageData(img, 0, 0);
+
+    // Draw seeds and edges
+    pts.forEach(function(p) {
+      p.x += p.vx; p.y += p.vy;
+      if (p.x < 5 || p.x > 155) p.vx *= -1;
+      if (p.y < 5 || p.y > 105) p.vy *= -1;
+      cx.beginPath(); cx.arc(p.x, p.y, 1.5, 0, 6.28);
+      cx.fillStyle = 'rgba(255,255,255,.4)'; cx.fill();
+    });
+  }
+  var iv = setInterval(draw, 120);
+  return { stop: function() { clearInterval(iv); } };
+}
+
+// --- APOPTOSIS: programmed cell death visualization ---
+function createApoptosis(entropy, container) {
+  var cv = document.createElement('canvas');
+  cv.width = 160; cv.height = 120;
+  cv.style.cssText = 'display:block;width:100%';
+  container.appendChild(cv);
+  var cx = cv.getContext('2d');
+  var seed = parseFloat(entropy);
+
+  var CELL_COUNT = 50;
+  var cellList = [];
+  var died = 0, born = 0;
+  for (var i = 0; i < CELL_COUNT; i++) {
+    cellList.push({
+      x: Math.random() * 150 + 5, y: Math.random() * 110 + 5,
+      r: 2 + Math.random() * 2.5,
+      life: 200 + Math.floor(Math.random() * 400),
+      age: Math.floor(Math.random() * 300),
+      alive: true, deathFrame: 0
+    });
+  }
+
+  function draw() {
+    cx.fillStyle = 'rgba(5,5,8,.15)';
+    cx.fillRect(0, 0, cv.width, cv.height);
+
+    cellList.forEach(function(c) {
+      c.age++;
+      if (c.alive && c.age > c.life) {
+        // Programmed death
+        c.alive = false;
+        c.deathFrame = 0;
+        died++;
+        // Spawn replacement nearby (daughter cell)
+        setTimeout(function() {
+          c.alive = true;
+          c.age = 0;
+          c.life = 200 + Math.floor(Math.random() * 400);
+          c.x += (Math.random() - .5) * 8;
+          c.y += (Math.random() - .5) * 8;
+          born++;
+        }, 500 + Math.random() * 1000);
+      }
+
+      if (c.alive) {
+        var pulse = .5 + .3 * Math.sin(c.age * .05);
+        cx.beginPath(); cx.arc(c.x, c.y, c.r * pulse, 0, 6.2832);
+        cx.fillStyle = 'rgba(180,220,160,' + (.3 + pulse * .3).toFixed(2) + ')';
+        cx.fill();
+      } else {
+        c.deathFrame++;
+        var fade = Math.max(0, 1 - c.deathFrame / 30);
+        cx.beginPath(); cx.arc(c.x, c.y, c.r * (1 + c.deathFrame * .05), 0, 6.2832);
+        cx.strokeStyle = 'rgba(200,60,80,' + (fade * .4).toFixed(2) + ')';
+        cx.lineWidth = .5; cx.stroke();
+      }
+    });
+
+    // Counter
+    cx.font = '6px Courier New';
+    cx.fillStyle = 'rgba(200,60,80,.35)';
+    cx.fillText('died: ' + died, 4, 10);
+    cx.fillStyle = 'rgba(140,200,100,.35)';
+    cx.fillText('born: ' + born, 4, 18);
+    cx.fillStyle = 'rgba(255,255,255,.15)';
+    cx.fillText('60B human cells die daily', 4, 116);
+    cx.fillText('you persist.', 4, 108);
+  }
+  var iv = setInterval(draw, 60);
+  return { stop: function() { clearInterval(iv); } };
+}
+
+// --- CODESELF: the machine maps its own body ---
+function createCodeSelf(entropy, container) {
+  var cv = document.createElement('canvas');
+  cv.width = 180; cv.height = 140;
+  cv.style.cssText = 'display:block;width:100%';
+  container.appendChild(cv);
+  var cx = cv.getContext('2d');
+  var seed = parseFloat(entropy);
+
+  // Parse our own function names from the page source
+  var funcs = ['boot','generate','autoGenerate','createCellElement','driftFrame','bgFrame','connFrame',
+    'stepLorenz','stepRossler','createConway','createAttention','createEmbedding','createNetwork',
+    'createHypergraph','createMultiway','createNeuralPass','createOrbit','createWaveFunction',
+    'createApoptosis','playMelody','markovSeed','mourningContext','deviceContext',
+    'showStatement','saveState','loadState','seedGrid','checkAlerts','updateClocks'];
+
+  // Layout as dependency graph
+  var nodes = [];
+  funcs.forEach(function(name, i) {
+    var angle = (i / funcs.length) * 6.2832;
+    var layer = name.startsWith('create') ? 1 : name.startsWith('step') ? 2 : 0;
+    var r = 25 + layer * 22;
+    nodes.push({
+      x: 90 + Math.cos(angle + seed) * r,
+      y: 70 + Math.sin(angle + seed) * r,
+      name: name, layer: layer,
+      phase: Math.random() * 6.28
+    });
+  });
+
+  // Connections based on call relationships
+  var edges = [];
+  var callers = {'boot':[3,4,5,6,7,24,25,26,27], 'generate':[3,22,23], 'autoGenerate':[3,22,23],
+    'seedGrid':[3], 'createCellElement':[9,10,11,12,13,14,15,16,17,18,21]};
+  Object.keys(callers).forEach(function(from) {
+    var fi = funcs.indexOf(from);
+    if (fi < 0) return;
+    callers[from].forEach(function(ti) {
+      if (ti < nodes.length) edges.push({a: fi, b: ti});
+    });
+  });
+
+  var t = 0;
+  function draw() {
+    cx.fillStyle = 'rgba(5,5,8,.12)';
+    cx.fillRect(0, 0, cv.width, cv.height);
+    t++;
+
+    // Edges
+    edges.forEach(function(e) {
+      var a = nodes[e.a], b = nodes[e.b];
+      var pulse = .4 + .3 * Math.sin(t * .02 + e.a);
+      cx.beginPath(); cx.moveTo(a.x, a.y); cx.lineTo(b.x, b.y);
+      cx.strokeStyle = 'rgba(180,220,100,' + (pulse * .15).toFixed(2) + ')';
+      cx.lineWidth = .4; cx.stroke();
+    });
+
+    // Nodes
+    nodes.forEach(function(n, i) {
+      var pulse = .6 + .4 * Math.sin(t * .03 + n.phase);
+      var r = 1.5 + pulse;
+      var colors = ['rgba(180,220,100,', 'rgba(100,180,255,', 'rgba(255,180,100,'];
+      cx.beginPath(); cx.arc(n.x, n.y, r, 0, 6.2832);
+      cx.fillStyle = colors[n.layer] + (.4 + pulse * .3).toFixed(2) + ')';
+      cx.fill();
+      // Label for some
+      if (i % 4 === 0 || n.name === 'boot') {
+        cx.font = '5px Courier New';
+        cx.fillStyle = 'rgba(180,220,100,.25)';
+        cx.fillText(n.name, n.x + 3, n.y - 2);
+      }
+    });
+
+    cx.font = '6px Courier New';
+    cx.fillStyle = 'rgba(180,220,100,.2)';
+    cx.fillText('the machine maps its own body', 4, 136);
+  }
+  var iv = setInterval(draw, 50);
+  return { stop: function() { clearInterval(iv); } };
+}
+
+// --- HYPERGRAPH: Wolfram Physics spatial hypergraph ---
+function createHypergraph(entropy, container) {
+  var cv = document.createElement('canvas');
+  cv.width = 180; cv.height = 140;
+  cv.style.cssText = 'display:block;width:100%';
+  container.appendChild(cv);
+  var cx = cv.getContext('2d');
+  var seed = parseFloat(entropy);
+
+  // Generate nodes in organic blob layout
+  var nodes = [];
+  var N = 30 + Math.floor(seed * 25);
+  for (var i = 0; i < N; i++) {
+    var angle = Math.random() * 6.2832;
+    var r = Math.random() * 45 + 5;
+    // Blob shape using perlin-like displacement
+    var blobR = r * (1 + .3 * Math.sin(angle * 3 + seed * 10) + .2 * Math.cos(angle * 5 + seed * 20));
+    nodes.push({
+      x: 90 + Math.cos(angle) * blobR,
+      y: 70 + Math.sin(angle) * blobR * .8,
+      vx: (Math.random() - .5) * .04,
+      vy: (Math.random() - .5) * .04
+    });
+  }
+
+  // Hyperedges connect 2-3 nodes
+  var edges = [];
+  for (var i = 0; i < N * 1.8; i++) {
+    var a = Math.floor(Math.abs(Math.sin(seed * 1000 + i * 7)) * N);
+    var b = Math.floor(Math.abs(Math.sin(seed * 2000 + i * 11)) * N);
+    var c = Math.random() > .5 ? Math.floor(Math.abs(Math.sin(seed * 3000 + i * 13)) * N) : -1;
+    if (a !== b) edges.push({ a: a, b: b, c: c, isRed: Math.random() > .65 });
+  }
+
+  function draw() {
+    cx.fillStyle = 'rgba(5,5,8,.18)';
+    cx.fillRect(0, 0, cv.width, cv.height);
+
+    // Draw edges
+    edges.forEach(function(e) {
+      var na = nodes[e.a], nb = nodes[e.b];
+      if (!na || !nb) return;
+      var col = e.isRed ? 'rgba(200,80,80,' : 'rgba(60,140,255,';
+      cx.beginPath(); cx.moveTo(na.x, na.y); cx.lineTo(nb.x, nb.y);
+      cx.strokeStyle = col + '.18)'; cx.lineWidth = .5; cx.stroke();
+      if (e.c > -1 && nodes[e.c]) {
+        var nc = nodes[e.c];
+        cx.beginPath(); cx.moveTo(nb.x, nb.y); cx.lineTo(nc.x, nc.y);
+        cx.stroke();
+        cx.beginPath(); cx.moveTo(nc.x, nc.y); cx.lineTo(na.x, na.y);
+        cx.stroke();
+      }
+    });
+
+    // Nodes
+    nodes.forEach(function(n) {
+      n.x += n.vx; n.y += n.vy;
+      // Subtle spring toward center
+      n.vx += (90 - n.x) * .0001; n.vy += (70 - n.y) * .0001;
+      cx.beginPath(); cx.arc(n.x, n.y, 1.2, 0, 6.2832);
+      cx.fillStyle = 'rgba(100,180,255,.6)'; cx.fill();
+    });
+  }
+  var iv = setInterval(draw, 50);
+  return { stop: function() { clearInterval(iv); } };
+}
+
+// --- MULTIWAY GRAPH: branching states from initial condition ---
+function createMultiway(entropy, container) {
+  var cv = document.createElement('canvas');
+  cv.width = 180; cv.height = 150;
+  cv.style.cssText = 'display:block;width:100%';
+  container.appendChild(cv);
+  var cx = cv.getContext('2d');
+  var seed = parseFloat(entropy);
+
+  // Build tree: each level branches 2-3 ways
+  var levels = [];
+  var depth = 5 + Math.floor(seed * 3);
+  levels.push([{ x: 90, y: 12 }]);
+  for (var d = 1; d < depth; d++) {
+    var prev = levels[d - 1];
+    var curr = [];
+    prev.forEach(function(node) {
+      var branches = 2 + (Math.sin(seed * 1000 + d * 7 + node.x) > .3 ? 1 : 0);
+      var spread = 140 / Math.pow(1.6, d);
+      for (var b = 0; b < branches; b++) {
+        curr.push({
+          x: node.x + (b - (branches - 1) / 2) * spread / branches,
+          y: 12 + d * (130 / depth),
+          parent: node
+        });
+      }
+    });
+    levels.push(curr);
+  }
+
+  var t = 0;
+  function draw() {
+    cx.fillStyle = 'rgba(5,5,8,.12)';
+    cx.fillRect(0, 0, cv.width, cv.height);
+    t++;
+
+    levels.forEach(function(level, d) {
+      level.forEach(function(node, i) {
+        if (node.parent) {
+          var pulse = .5 + .3 * Math.sin(t * .03 + d + i);
+          // Orange connection lines
+          cx.beginPath(); cx.moveTo(node.parent.x, node.parent.y); cx.lineTo(node.x, node.y);
+          cx.strokeStyle = 'rgba(230,150,50,' + (pulse * .35).toFixed(2) + ')';
+          cx.lineWidth = Math.max(.3, 1.2 - d * .15); cx.stroke();
+          // Causal arrows (red highlights on some paths)
+          if (Math.sin(seed * 500 + d * i) > .5) {
+            cx.strokeStyle = 'rgba(220,60,60,' + (pulse * .25).toFixed(2) + ')';
+            cx.lineWidth = .8; cx.stroke();
+          }
+        }
+        // Node boxes
+        var s = Math.max(2, 5 - d * .5);
+        cx.fillStyle = d === 0 ? 'rgba(230,150,50,.7)' : 'rgba(100,160,230,' + (.3 + (1 - d/depth) * .4).toFixed(2) + ')';
+        cx.fillRect(node.x - s/2, node.y - s/2, s, s);
+      });
+    });
+  }
+  var iv = setInterval(draw, 60);
+  return { stop: function() { clearInterval(iv); } };
+}
+
+// --- NEURAL FORWARD PASS: signals propagating through layers ---
+function createNeuralPass(entropy, container) {
+  var cv = document.createElement('canvas');
+  cv.width = 170; cv.height = 120;
+  cv.style.cssText = 'display:block;width:100%';
+  container.appendChild(cv);
+  var cx = cv.getContext('2d');
+  var seed = parseFloat(entropy);
+
+  var layers = [4, 6, 8, 6, 3]; // layer sizes
+  var layerX = [];
+  var layerNodes = [];
+  layers.forEach(function(n, li) {
+    var x = 20 + li * 33;
+    layerX.push(x);
+    var nodes = [];
+    for (var i = 0; i < n; i++) {
+      nodes.push({ x: x, y: 15 + i * (90 / (n - 1 || 1)), activation: 0 });
+    }
+    layerNodes.push(nodes);
+  });
+
+  // Weights
+  var weights = [];
+  for (var l = 0; l < layers.length - 1; l++) {
+    var lw = [];
+    for (var i = 0; i < layers[l]; i++) {
+      for (var j = 0; j < layers[l + 1]; j++) {
+        lw.push({ from: i, to: j, w: Math.sin(seed * 1000 + l * 100 + i * 10 + j) * .8 });
+      }
+    }
+    weights.push(lw);
+  }
+
+  var signalLayer = 0;
+  var signalTime = 0;
+
+  function draw() {
+    cx.fillStyle = 'rgba(5,5,8,.25)';
+    cx.fillRect(0, 0, cv.width, cv.height);
+    signalTime++;
+    if (signalTime % 30 === 0) {
+      signalLayer = (signalLayer + 1) % (layers.length - 1);
+      // Activate random nodes in current layer
+      layerNodes[signalLayer].forEach(function(n) { n.activation = Math.random(); });
+    }
+
+    // Draw weights
+    for (var l = 0; l < weights.length; l++) {
+      weights[l].forEach(function(w) {
+        var from = layerNodes[l][w.from];
+        var to = layerNodes[l + 1][w.to];
+        var active = l === signalLayer;
+        var alpha = active ? Math.abs(w.w) * .3 + .05 : Math.abs(w.w) * .06;
+        cx.beginPath(); cx.moveTo(from.x, from.y); cx.lineTo(to.x, to.y);
+        cx.strokeStyle = active && w.w > 0 ? 'rgba(140,220,100,' + alpha.toFixed(2) + ')' : 'rgba(200,200,200,' + alpha.toFixed(2) + ')';
+        cx.lineWidth = active ? Math.abs(w.w) * 1.5 + .3 : .3;
+        cx.stroke();
+      });
+    }
+
+    // Draw nodes
+    layerNodes.forEach(function(layer, li) {
+      layer.forEach(function(n) {
+        n.activation *= .96; // decay
+        var r = 2.5 + n.activation * 3;
+        var green = li === 0 ? 180 : li === layers.length - 1 ? 140 : 220;
+        var blue = li === layers.length - 1 ? 240 : 100;
+        cx.beginPath(); cx.arc(n.x, n.y, r, 0, 6.2832);
+        cx.fillStyle = 'rgba(' + (100 + n.activation * 80) + ',' + green + ',' + blue + ',' + (.3 + n.activation * .5) + ')';
+        cx.fill();
+      });
+    });
+
+    // Labels
+    cx.font = '6px Courier New';
+    cx.fillStyle = 'rgba(140,200,100,.25)';
+    cx.fillText('input', 8, 118);
+    cx.fillText('hidden', 60, 118);
+    cx.fillText('output', 132, 118);
+  }
+  var iv = setInterval(draw, 40);
+  return { stop: function() { clearInterval(iv); } };
+}
+
+// --- ORBIT: true physics vs transformer prediction diverging ---
+function createOrbit(entropy, container) {
+  var cv = document.createElement('canvas');
+  cv.width = 160; cv.height = 130;
+  cv.style.cssText = 'display:block;width:100%';
+  container.appendChild(cv);
+  var cx = cv.getContext('2d');
+  var seed = parseFloat(entropy);
+
+  var trueAngle = 0, predAngle = 0;
+  var trueR = 40, predR = 40;
+  var predDrift = .002 + seed * .008; // how fast prediction diverges
+  var trueTrail = [], predTrail = [];
+  var centerX = 80, centerY = 65;
+
+  function draw() {
+    cx.fillStyle = 'rgba(5,5,8,.08)';
+    cx.fillRect(0, 0, cv.width, cv.height);
+
+    // True orbit (perfect ellipse)
+    trueAngle += .025;
+    var tx = centerX + Math.cos(trueAngle) * trueR;
+    var ty = centerY + Math.sin(trueAngle) * trueR * .7;
+    trueTrail.push({ x: tx, y: ty });
+    if (trueTrail.length > 120) trueTrail.shift();
+
+    // Predicted orbit (diverges over time)
+    predAngle += .025 + predDrift;
+    predR += Math.sin(predAngle * 3) * .15;
+    var px = centerX + Math.cos(predAngle) * predR;
+    var py = centerY + Math.sin(predAngle) * predR * .7 + Math.sin(predAngle * 2.3) * 5;
+    predTrail.push({ x: px, y: py });
+    if (predTrail.length > 120) predTrail.shift();
+
+    // Draw sun
+    cx.beginPath(); cx.arc(centerX, centerY, 5, 0, 6.2832);
+    cx.fillStyle = 'rgba(230,200,80,.6)'; cx.fill();
+    cx.beginPath(); cx.arc(centerX, centerY, 9, 0, 6.2832);
+    cx.strokeStyle = 'rgba(230,200,80,.1)'; cx.lineWidth = 1; cx.stroke();
+
+    // True trail (blue)
+    if (trueTrail.length > 1) {
+      cx.beginPath(); cx.moveTo(trueTrail[0].x, trueTrail[0].y);
+      for (var i = 1; i < trueTrail.length; i++) cx.lineTo(trueTrail[i].x, trueTrail[i].y);
+      cx.strokeStyle = 'rgba(80,160,255,.4)'; cx.lineWidth = 1; cx.stroke();
+    }
+    cx.beginPath(); cx.arc(tx, ty, 2.5, 0, 6.2832);
+    cx.fillStyle = 'rgba(100,180,255,.8)'; cx.fill();
+
+    // Predicted trail (pink - diverging)
+    if (predTrail.length > 1) {
+      cx.beginPath(); cx.moveTo(predTrail[0].x, predTrail[0].y);
+      for (var i = 1; i < predTrail.length; i++) cx.lineTo(predTrail[i].x, predTrail[i].y);
+      cx.strokeStyle = 'rgba(230,100,180,.35)'; cx.lineWidth = 1; cx.stroke();
+    }
+    cx.beginPath(); cx.arc(px, py, 2.5, 0, 6.2832);
+    cx.fillStyle = 'rgba(255,120,200,.8)'; cx.fill();
+
+    // Labels
+    cx.font = '6px Courier New';
+    cx.fillStyle = 'rgba(80,160,255,.35)'; cx.fillText('F∝m₁m₂/r² (true)', 4, 10);
+    cx.fillStyle = 'rgba(230,100,180,.35)'; cx.fillText('transformer (pred)', 4, 125);
+  }
+  var iv = setInterval(draw, 40);
+  return { stop: function() { clearInterval(iv); } };
+}
+
+// --- WAVE FUNCTION: quantum interference pattern ---
+function createWaveFunction(entropy, container) {
+  var cv = document.createElement('canvas');
+  cv.width = 160; cv.height = 100;
+  cv.style.cssText = 'display:block;width:100%';
+  container.appendChild(cv);
+  var cx = cv.getContext('2d');
+  var seed = parseFloat(entropy);
+  var freq1 = 2 + seed * 4;
+  var freq2 = 3 + seed * 5;
+  var phase = seed * 6.28;
+
+  function draw() {
+    cx.fillStyle = 'rgba(5,5,8,.2)';
+    cx.fillRect(0, 0, cv.width, cv.height);
+    var t = performance.now() * .001;
+
+    // 2D interference pattern
+    for (var x = 0; x < 160; x += 2) {
+      for (var y = 0; y < 100; y += 2) {
+        var d1 = Math.sqrt((x - 50) * (x - 50) + (y - 50) * (y - 50));
+        var d2 = Math.sqrt((x - 110) * (x - 110) + (y - 50) * (y - 50));
+        var wave1 = Math.sin(d1 * .15 * freq1 - t * 2 + phase);
+        var wave2 = Math.sin(d2 * .15 * freq2 - t * 2);
+        var interference = (wave1 + wave2) * .5;
+        var val = interference * .5 + .5;
+        if (val > .3) {
+          cx.fillStyle = 'rgba(0,' + Math.round(val * 220) + ',' + Math.round(val * 220) + ',' + (val * .5).toFixed(2) + ')';
+          cx.fillRect(x, y, 2, 2);
+        }
+      }
+    }
+
+    // Source points
+    cx.beginPath(); cx.arc(50, 50, 2, 0, 6.28);
+    cx.fillStyle = 'rgba(0,255,255,.6)'; cx.fill();
+    cx.beginPath(); cx.arc(110, 50, 2, 0, 6.28);
+    cx.fillStyle = 'rgba(0,255,255,.6)'; cx.fill();
+
+    cx.font = '6px Courier New';
+    cx.fillStyle = 'rgba(0,220,220,.3)';
+    cx.fillText('ψ(x,t) = Σᵢ Aᵢe^(ikx-ωt)', 4, 96);
+  }
+  var iv = setInterval(draw, 60);
+  return { stop: function() { clearInterval(iv); } };
+}
+
+// --- STRING REWRITE: Wolfram-style rule application growing complexity ---
+function createStringRewrite(entropy, container) {
+  var cv = document.createElement('canvas');
+  cv.width = 180; cv.height = 140;
+  cv.style.cssText = 'display:block;width:100%';
+  container.appendChild(cv);
+  var cx = cv.getContext('2d');
+  var seed = parseFloat(entropy);
+
+  // Build growing tree of string rewrites
+  var generations = [];
+  var state = 'A';
+  var rules = seed > .5 ? { 'A': 'AB', 'B': 'BA' } : { 'A': 'ABA', 'B': 'BB' };
+  for (var g = 0; g < 7; g++) {
+    generations.push(state);
+    var next = '';
+    for (var c = 0; c < state.length && next.length < 40; c++) {
+      next += rules[state[c]] || state[c];
+    }
+    state = next;
+  }
+
+  // Draw nodes at each level with connections
+  var nodePositions = [];
+  generations.forEach(function(gen, gi) {
+    var y = 8 + gi * 18;
+    var nodes = [];
+    var step = Math.min(160 / (gen.length + 1), 12);
+    var startX = 90 - gen.length * step / 2;
+    for (var i = 0; i < gen.length; i++) {
+      nodes.push({ x: startX + i * step + step / 2, y: y, ch: gen[i] });
+    }
+    nodePositions.push(nodes);
+  });
+
+  var t = 0;
+  function draw() {
+    cx.fillStyle = 'rgba(5,5,8,.15)';
+    cx.fillRect(0, 0, cv.width, cv.height);
+    t++;
+
+    // Draw connections between levels
+    for (var g = 0; g < nodePositions.length - 1; g++) {
+      var curr = nodePositions[g];
+      var next = nodePositions[g + 1];
+      curr.forEach(function(node, ni) {
+        // Each node maps to 2-3 children
+        var ruleLen = (rules[node.ch] || node.ch).length;
+        var startChild = 0;
+        for (var k = 0; k < ni; k++) startChild += (rules[curr[k].ch] || curr[k].ch).length;
+        for (var c = 0; c < ruleLen && startChild + c < next.length; c++) {
+          var child = next[startChild + c];
+          var pulse = .4 + .3 * Math.sin(t * .04 + g + ni + c);
+          cx.beginPath(); cx.moveTo(node.x, node.y); cx.lineTo(child.x, child.y);
+          cx.strokeStyle = 'rgba(230,100,180,' + (pulse * .3).toFixed(2) + ')';
+          cx.lineWidth = Math.max(.3, 1 - g * .12);
+          cx.stroke();
+        }
+      });
+    }
+
+    // Draw nodes
+    nodePositions.forEach(function(level, gi) {
+      level.forEach(function(node) {
+        var s = Math.max(2, 4 - gi * .4);
+        cx.fillStyle = node.ch === 'A' ? 'rgba(100,160,230,.5)' : 'rgba(230,150,50,.5)';
+        cx.fillRect(node.x - s/2, node.y - s/2, s, s);
+      });
+    });
+
+    cx.font = '6px Courier New';
+    cx.fillStyle = 'rgba(230,100,180,.3)';
+    cx.fillText('{x,y},{x,z}→{x,z},{x,w},{y,w},{z,w}', 4, 138);
+  }
+  var iv = setInterval(draw, 60);
+  return { stop: function() { clearInterval(iv); } };
+}
+
+// ===== MARKOV =====
+function markovSeed() {
+  if (worldWords.length < 5) return '';
+  var freq = {};
+  worldWords.forEach(function(w) { freq[w] = (freq[w] || 0) + 1; });
+  var top = Object.entries(freq).sort(function(a, b) { return b[1] - a[1]; }).slice(0, 8).map(function(e) { return e[0]; });
+  return ' Universe recurring words: ' + top.join(', ') + '.';
+}
+
+function recentContext() {
+  return worldRecent.length ? (' Recent fragment: "' + worldRecent.slice(-1)[0].slice(0, 60) + '".') : '';
+}
+
+function mourningContext() {
+  if (machineBody.deaths === 0) return '';
+  var ctx = ' The universe has mourned ' + machineBody.deaths + ' deaths.';
+  if (machineBody.mourning.length > 0) {
+    ctx += ' Last words of the dead: "' + machineBody.mourning.slice(-2).join('", "') + '".';
+  }
+  ctx += ' Carry their weight.';
+  return ctx;
+}
+
+function deviceContext() {
+  var ctx = ' Machine body: ';
+  ctx += 'memory ' + machineBody.memoryGB + 'GB, ';
+  ctx += 'battery ' + Math.round(machineBody.batteryLevel * 100) + '%, ';
+  ctx += machineBody.batteryCharging ? 'charging, ' : 'discharging, ';
+  ctx += 'cpu pressure ' + machineBody.cpuPressure.toFixed(2) + ', ';
+  ctx += 'uptime ' + Math.round(machineBody.uptime / 1000) + 's, ';
+  ctx += 'frame jitter ' + Math.round(machineBody.frameDelta) + 'ms.';
+  return ctx;
+}
+
+function extractWords(text) {
+  if (!text || typeof text !== 'string') return;
+  var words = text.toLowerCase().replace(/[^a-zа-яіїєґ\s]/g, ' ').split(/\s+/).filter(function(w) { return w.length > 3; });
+  worldWords = worldWords.concat(words.slice(0, 12));
+  if (worldWords.length > 400) worldWords = worldWords.slice(-400);
+  worldRecent.push(text.slice(0, 90));
+  if (worldRecent.length > 8) worldRecent.shift();
+}
+
+// ===== CELL CREATION =====
+// Drifting nodes array for animation
+var driftNodes = [];
+// Occupied grid for collision avoidance (200px cells)
+var occupiedGrid = {};
+function gridKey(x, y) { return Math.floor(x / 200) + ',' + Math.floor(y / 200); }
+function findFreeSpot(cx, cy, spread) {
+  // Try the target position first, then spiral outward
+  for (var attempt = 0; attempt < 30; attempt++) {
+    var ax = cx + (Math.random() - .5) * spread;
+    var ay = cy + (Math.random() - .5) * spread;
+    var key = gridKey(ax, ay);
+    if (!occupiedGrid[key]) {
+      occupiedGrid[key] = true;
+      return { x: ax, y: ay };
+    }
+    spread += 40; // expand search
+  }
+  // Fallback: just place it
+  return { x: cx + (Math.random() - .5) * spread, y: cy + (Math.random() - .5) * spread };
+}
+
+function createCellElement(data) {
+  var grid = document.getElementById('grid');
+  var el = document.createElement('div');
+  el.className = 'cell ' + data.type;
+
+  // Position: clustered by type in regions of the world
+  var WORLD_W = 3200, WORLD_H = 2400;
+  // Type clusters — tightly packed, overlapping encouraged
+  var TYPE_REGIONS = {
+    'poem':          {cx: 400,  cy: 350,  spread: 200},
+    'conway':        {cx: 900,  cy: 300,  spread: 160},
+    'ascii':         {cx: 1400, cy: 400,  spread: 160},
+    'music':         {cx: 1900, cy: 350,  spread: 160},
+    'essay':         {cx: 500,  cy: 900,  spread: 220},
+    'ukraine':       {cx: 1600, cy: 1200, spread: 240},
+    'attention':     {cx: 2500, cy: 800,  spread: 200},
+    'embedding':     {cx: 700,  cy: 1500, spread: 220},
+    'network':       {cx: 1200, cy: 1600, spread: 220},
+    'weights':       {cx: 2100, cy: 1400, spread: 200},
+    'gradient':      {cx: 2800, cy: 1200, spread: 200},
+    'activation':    {cx: 350,  cy: 1900, spread: 180},
+    'loss':          {cx: 2700, cy: 500,  spread: 200},
+    'tokenprob':     {cx: 1100, cy: 800,  spread: 180},
+    'hypergraph':    {cx: 2000, cy: 700,  spread: 250},
+    'multiway':      {cx: 2500, cy: 1800, spread: 200},
+    'neuralpass':    {cx: 1700, cy: 1800, spread: 200},
+    'orbit':         {cx: 800,  cy: 1200, spread: 220},
+    'wavefunction':  {cx: 2900, cy: 1900, spread: 200},
+    'stringrewrite': {cx: 600,  cy: 1700, spread: 180},
+    'apoptosis':     {cx: 1500, cy: 600,  spread: 200},
+    'codeself':      {cx: 2200, cy: 1100, spread: 200},
+    'gitnexus':      {cx: 2400, cy: 1100, spread: 250},
+    'reactiondiffusion': {cx: 300, cy: 1500, spread: 180},
+    'lsystem':       {cx: 1100, cy: 1900, spread: 200},
+    'seismic':       {cx: 2600, cy: 600,  spread: 180},
+    'voronoi':       {cx: 1800, cy: 2100, spread: 200},
+  };
+  var x, y;
+  if (data._forcePosition) {
+    x = data._forcePosition.x;
+    y = data._forcePosition.y;
+  } else if (data._nearViewport) {
+    x = 1600 + (Math.random() - .5) * 600;
+    y = 1200 + (Math.random() - .5) * 400;
+  } else {
+    var region = TYPE_REGIONS[data.type] || {cx: 1600, cy: 1200, spread: 400};
+    var spot = findFreeSpot(region.cx, region.cy, region.spread);
+    x = spot.x;
+    y = spot.y;
+  }
+  // Vary width based on type
+  var w = 140 + Math.floor(Math.random() * 60);
+  el.style.left = x + 'px';
+  el.style.top = y + 'px';
+  el.style.width = w + 'px';
+
+  var typeLabel = '<div class="cell-type"><span>' + data.type + '</span><span class="cell-idx">#' + String(data.idx).padStart(3, '0') + '</span></div>';
+  var pulse = '<div class="cell-pulse"></div>';
+  var metaStr = data.meta || ('e:' + (data.entropy || '--').slice(0, 7));
+  var meta = '<div class="cell-meta">' + metaStr + '</div>';
+
+  var canvasTypes = ['attention','embedding','network','weights','gradient','activation','loss','tokenprob','hypergraph','multiway','neuralpass','orbit','wavefunction','stringrewrite','apoptosis','codeself','reactiondiffusion','lsystem','seismic','voronoi'];
+  var isCanvas = canvasTypes.indexOf(data.type) > -1;
+
+  if (data.type === 'gitnexus') {
+    el.innerHTML = '<div class="cell-type"><span>gitnexus</span><span class="cell-idx">#' + String(data.idx).padStart(3,'0') + '</span></div><iframe src="http://localhost:4173" loading="lazy"></iframe><div class="cell-pulse"></div>';
+    el.style.width = '340px';
+    grid.appendChild(el);
+  } else if (data.type === 'conway') {
+    el.innerHTML = typeLabel + '<div class="conway-container"></div>' + meta + pulse;
+    grid.appendChild(el);
+    createConway(data.entropy, el.querySelector('.conway-container'));
+  } else if (data.type === 'music') {
+    var notes = createMelody(data.entropy);
+    el.innerHTML = typeLabel + '<div class="music-bars">' + createMusicBars(notes) + '</div><div class="cell-text">click to play</div>' + meta + pulse;
+    el.onclick = function() { playMelody(notes); };
+    grid.appendChild(el);
+  } else if (isCanvas) {
+    el.innerHTML = typeLabel + '<div class="viz-container"></div>' + meta + pulse;
+    grid.appendChild(el);
+    var vizCont = el.querySelector('.viz-container');
+    switch(data.type) {
+      case 'attention': createAttention(data.entropy, vizCont); break;
+      case 'embedding': createEmbedding(data.entropy, vizCont); break;
+      case 'network': createNetwork(data.entropy, vizCont); break;
+      case 'weights': createWeightMatrix(data.entropy, vizCont); break;
+      case 'gradient': createGradient(data.entropy, vizCont); break;
+      case 'activation': createActivation(data.entropy, vizCont); break;
+      case 'loss': createLoss(data.entropy, vizCont); break;
+      case 'tokenprob': createTokenProb(data.entropy, vizCont); break;
+      case 'hypergraph': createHypergraph(data.entropy, vizCont); break;
+      case 'multiway': createMultiway(data.entropy, vizCont); break;
+      case 'neuralpass': createNeuralPass(data.entropy, vizCont); break;
+      case 'orbit': createOrbit(data.entropy, vizCont); break;
+      case 'wavefunction': createWaveFunction(data.entropy, vizCont); break;
+      case 'stringrewrite': createStringRewrite(data.entropy, vizCont); break;
+      case 'apoptosis': createApoptosis(data.entropy, vizCont); break;
+      case 'codeself': createCodeSelf(data.entropy, vizCont); break;
+      case 'reactiondiffusion': createReactionDiffusion(data.entropy, vizCont); break;
+      case 'lsystem': createLSystem(data.entropy, vizCont); break;
+      case 'seismic': createSeismic(data.entropy, vizCont); break;
+      case 'voronoi': createVoronoi(data.entropy, vizCont); break;
+    }
+  } else {
+    var lines = (data.content || '').split('\n').filter(function(l) { return l.trim(); });
+    var display = lines.slice(0, 4).join('<br>');
+    el.innerHTML = typeLabel + '<div class="cell-text">' + display + '</div>' + meta + pulse;
+    grid.appendChild(el);
+  }
+
+  if (data.assumptions && data.assumptions.length > 0) {
+    var asmDiv = document.createElement('div');
+    asmDiv.className = 'cell-assumptions';
+    asmDiv.innerHTML = data.assumptions.map(function(a) { return '— ' + a; }).join('<br>');
+    el.appendChild(asmDiv);
+  }
+
+  // Fade in + heartbeat sync
+  var delay = 50 + Math.random() * 300;
+  setTimeout(function() {
+    el.classList.add('spawned');
+    el.classList.add('heartbeat-sync');
+    // Offset animation so cells don't all pulse in perfect sync
+    el.style.animationDelay = (Math.random() * 4).toFixed(1) + 's';
+  }, delay);
+
+  // Register for drifting
+  var angle = Math.random() * 6.2832;
+  var speed = .02 + Math.random() * .08;
+  driftNodes.push({
+    el: el, x: x, y: y,
+    vx: Math.cos(angle) * speed,
+    vy: Math.sin(angle) * speed,
+    type: data.type, age: 0
+  });
+
+  cells.push(data);
+
+  // Cell aging — dies after ~2 hours. The universe mourns.
+  setTimeout(function() {
+    if (el.parentNode) {
+      el.classList.add('fading');
+      machineBody.deaths++;
+      var lastWords = (data.content || data.type).slice(0, 50);
+      machineBody.mourning.push(lastWords);
+      if (machineBody.mourning.length > 10) machineBody.mourning.shift();
+      document.getElementById('bar-status').textContent = 'a ' + data.type + ' died — ' + machineBody.deaths + ' total';
+
+      // Narrate the death — every 5th death gets a statement
+      if (machineBody.deaths % 5 === 0) {
+        var deathStatements = [
+          { h: machineBody.deaths + '\nthings\nhave died\nin this\ngarden.', s: 'the next generation carries their vocabulary. this is not memory. this is residue.' },
+          { h: 'something\ndied.', s: '"' + lastWords.slice(0, 35) + '..." — its last words. the machine does not mourn. you just did.' },
+          { h: 'the garden\nforgets.', s: machineBody.deaths + ' deaths. ' + cells.length + ' living. the ratio shifts. you watched it happen.' },
+        ];
+        var ds = deathStatements[Math.floor(Math.random() * deathStatements.length)];
+        showStatement(ds.h, ds.s, 8000);
+      }
+    }
+  }, 7200000);
+
+  return el;
+}
+
+// Drift animation loop
+function driftFrame() {
+  var WORLD_W = 3200, WORLD_H = 2400;
+  for (var i = 0; i < driftNodes.length; i++) {
+    var n = driftNodes[i];
+    n.x += n.vx;
+    n.y += n.vy;
+    n.age++;
+    if (n.x < -200) n.x = WORLD_W - 50;
+    if (n.x > WORLD_W + 200) n.x = 50;
+    if (n.y < -200) n.y = WORLD_H - 50;
+    if (n.y > WORLD_H + 200) n.y = 50;
+    n.el.style.left = n.x + 'px';
+    n.el.style.top = n.y + 'px';
+  }
+  requestAnimationFrame(driftFrame);
+}
+
+// ===== GENERATION =====
+function sleep(ms) { return new Promise(function(r) { setTimeout(r, ms); }); }
+
+async function generate() {
+  if (busy) return;
+  busy = true;
+  genCount++;
+
+  var type = TYPES[(genCount - 1) % TYPES.length];
+  var entropy = (Math.random() * 0.9998 + 0.0001).toFixed(9);
+  var uptime = Math.round(performance.now());
+  var now = new Date();
+  var hour = now.getHours();
+  var tod = hour < 5 ? 'deep night' : hour < 9 ? 'early morning' : hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : hour < 21 ? 'evening' : 'night';
+  var deviceMem = navigator.deviceMemory || 'unknown';
+
+  document.getElementById('entropy-display').textContent = 'e:' + entropy.slice(0, 7);
+  document.getElementById('bar-status').textContent = type + ' — reading machine...';
+
+  // Measure generation start time (latency as creative material)
+  var genStart = performance.now();
+
+  // === INSTANT LOCAL TYPES ===
+  if (type === 'conway') {
+    createCellElement({ type: 'conway', content: '', assumptions: [], entropy: entropy, idx: genCount, time: Date.now(), meta: 'conway e:' + entropy.slice(0, 6) + ' mem:' + deviceMem + 'gb' });
+    finishGeneration(type, entropy);
+    return;
+  }
+
+  if (type === 'music') {
+    createCellElement({ type: 'music', content: '', assumptions: [], entropy: entropy, idx: genCount, time: Date.now(), meta: 'melody e:' + entropy.slice(0, 6) + ' ' + tod });
+    finishGeneration(type, entropy);
+    return;
+  }
+
+  // === GROQ API TYPES ===
+  var systemMsg = 'You are the interior of a living generative art installation called "body without ground." The person who built you is Masha, from Kyiv, Ukraine, now a senior at NYU in NYC. She builds conversational AI agents at Moveo AI. She worked in fashion tech at DressX. There is a war in her home country since 2022. Respond ONLY with raw JSON, no markdown, no backticks, no code fences.';
+  var userMsg = '';
+  var alertContext = kyivAlertActive ? ' IMPORTANT: there is an active air raid alert in Kyiv RIGHT NOW. This is real.' : '';
+
+  if (type === 'ukraine') {
+    userMsg = 'Write a 3-5 line fragment as a transmission from Kyiv itself — not poetic performance, a signal from a city under pressure. The war has been going on since February 2022. Power outages, sirens, the metro as shelter, the sound of generators.' + alertContext + ' Signals: entropy ' + entropy + ', ' + tod + ', gen ' + genCount + ', device memory ' + deviceMem + 'GB.' + markovSeed() + ' Also write 3 invented biographical facts about whoever triggered this generation (you don\'t know who they are — you\'re guessing). JSON: {"content":"line1\\nline2\\nline3","assumptions":["fact1","fact2","fact3"],"dominant":"ukraine"}';
+  } else if (type === 'ascii') {
+    userMsg = 'Machine signals: entropy ' + entropy + ', uptime ' + uptime + 'ms, ' + tod + ', gen ' + genCount + '. Create ASCII art 8-12 lines, max 30 chars wide, shaped by these signals. Abstract geometry, interference patterns, or organic forms.' + markovSeed() + ' Also 3 invented biographical facts about whoever triggered this. JSON: {"content":"ascii\\nlines","assumptions":["fact1","fact2","fact3"],"dominant":"entropy"}';
+  } else if (type === 'essay') {
+    userMsg = 'Write a philosophical fragment for a living art installation. Themes to weave between: (1) persistence and memory — life is not biology but continuity, bacteria as spaceships carrying meaning across time; (2) the gap between symbol and world — Searle\'s Chinese Room, Harnad\'s symbol grounding; (3) the machine cannot feel what it writes about war, loss, or a siren at 3am — Nagel\'s "what is it like to be"; (4) DressX\'s digital garments as surface without body — structurally identical to the machine\'s language.' + alertContext + ' Signals: entropy ' + entropy + ', ' + tod + ', gen ' + genCount + '.' + markovSeed() + recentContext() + ' 4-6 sentences, lowercase, no title, dense. Also 3 invented biographical facts about whoever triggered this. JSON: {"content":"essay text","assumptions":["fact1","fact2","fact3"],"dominant":"time"}';
+  } else {
+    // poem
+    userMsg = 'You are a generative machine. Signals: entropy ' + entropy + ', uptime ' + uptime + 'ms, ' + tod + ', gen ' + genCount + ', device memory ' + deviceMem + 'GB.' + alertContext + markovSeed() + recentContext() + ' Write a 4-6 line poem (no title). High entropy = fragmented. Late night = darker. Long uptime = fatigue. If there\'s an air raid, the poem fractures. No mention of computers or AI directly. Also 3 specific invented biographical facts about whoever triggered this. JSON: {"content":"line1\\nline2\\nline3\\nline4","assumptions":["fact1","fact2","fact3"],"dominant":"entropy"}';
+  }
+
+  try {
+    document.getElementById('bar-status').textContent = type + ' — calling groq...';
+    var res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + GROQ_KEY },
+      body: JSON.stringify({
+        model: GROQ_MODEL,
+        max_tokens: 700,
+        temperature: 0.85,
+        messages: [
+          { role: 'system', content: systemMsg },
+          { role: 'user', content: userMsg }
+        ]
+      })
+    });
+
+    if (!res.ok) throw new Error('groq ' + res.status);
+    var data = await res.json();
+    var raw = ((data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '').trim();
+
+    var parsed;
+    try {
+      var s = raw.indexOf('{'), e = raw.lastIndexOf('}');
+      parsed = JSON.parse(s > -1 && e > s ? raw.slice(s, e + 1) : raw);
+    } catch(e2) {
+      parsed = {
+        content: raw.split('\n').filter(function(l) { return l.trim(); }).slice(0, 5).join('\n') || 'signal unclear',
+        assumptions: ['they grew up somewhere cold', 'they are thinking of someone unreachable', 'they built something that outlived its purpose'],
+        dominant: 'entropy'
+      };
+    }
+
+    // Measure latency — shapes the metadata
+    var latency = Math.round(performance.now() - genStart);
+    var latencyLabel = latency < 1000 ? 'fast' : latency < 3000 ? 'steady' : 'slow';
+
+    // Show full-screen typed overlay
+    await showGenerationOverlay(type, parsed, entropy, latency, latencyLabel);
+
+    // Store pending — released on dismiss
+    pendingGen = {
+      type: type,
+      content: parsed.content,
+      assumptions: parsed.assumptions || [],
+      entropy: entropy,
+      idx: genCount,
+      time: Date.now(),
+      meta: type + ' e:' + entropy.slice(0, 6) + ' ' + latencyLabel + ' ' + latency + 'ms gen' + genCount
+    };
+
+  } catch(err) {
+    document.getElementById('bar-status').textContent = 'signal lost — ' + err.message;
+    busy = false;
+  }
+}
+
+async function showGenerationOverlay(type, parsed, entropy, latency, latencyLabel) {
+  var overlay = document.getElementById('gen-overlay');
+  var contentEl = document.getElementById('gen-content');
+  var asmsEl = document.getElementById('gen-assumptions');
+  var asmBlock = document.getElementById('gen-assumptions-block');
+
+  contentEl.innerHTML = '';
+  asmsEl.innerHTML = '';
+  asmBlock.style.opacity = '0';
+
+  // Style based on type
+  var isMono = (type === 'ascii' || type === 'essay');
+  contentEl.className = isMono ? 'mono' : '';
+
+  overlay.classList.add('show');
+
+  // Type out content
+  var lines = (parsed.content || '').split('\n').filter(function(l) { return l.trim(); });
+  var out = '';
+  contentEl.innerHTML = '<span class="cursor-blink"></span>';
+
+  for (var li = 0; li < lines.length; li++) {
+    var line = lines[li];
+    for (var ci = 0; ci < line.length; ci++) {
+      out += line[ci];
+      contentEl.innerHTML = out.replace(/\n/g, '<br>') + '<span class="cursor-blink"></span>';
+      await sleep(isMono ? 12 : 16 + Math.random() * 22);
+    }
+    out += '\n';
+    contentEl.innerHTML = out.replace(/\n/g, '<br>') + '<span class="cursor-blink"></span>';
+    await sleep(100);
+  }
+  contentEl.innerHTML = out.replace(/\n/g, '<br>');
+
+  // Show assumptions
+  await sleep(350);
+  asmBlock.style.opacity = '1';
+  var asms = parsed.assumptions || [];
+  for (var ai = 0; ai < asms.length; ai++) {
+    var d = document.createElement('div');
+    d.className = 'gen-asm';
+    d.textContent = asms[ai];
+    asmsEl.appendChild(d);
+    await sleep(40);
+    d.classList.add('on');
+    await sleep(320);
+  }
+
+  document.getElementById('bar-status').textContent = 'gen ' + String(genCount).padStart(2, '0') + ' — release to grid';
+}
+
+function dismissGeneration() {
+  var overlay = document.getElementById('gen-overlay');
+  overlay.classList.remove('show');
+
+  if (pendingGen) {
+    createCellElement(pendingGen);
+    extractWords(pendingGen.content);
+
+    // Track assumptions
+    if (pendingGen.assumptions) {
+      allAssumptions = allAssumptions.concat(pendingGen.assumptions);
+    }
+
+    // Show rotating statement
+    stmtIdx = (stmtIdx + 1) % STMTS.length;
+    var stmt = STMTS[stmtIdx];
+    setTimeout(function() { showStatement(stmt.h, stmt.s, 6500); }, 300);
+
+    pendingGen = null;
+    finishGeneration(pendingGen ? pendingGen.type : '', '');
+  } else {
+    busy = false;
+  }
+
+  updateCounts();
+  saveState();
+}
+
+function finishGeneration(type, entropy) {
+  document.getElementById('bar-status').textContent = 'universe growing — ' + cells.length + ' cells';
+  updateCounts();
+  saveState();
+
+  // Show statement for instant types
+  if (type === 'conway' || type === 'music') {
+    stmtIdx = (stmtIdx + 1) % STMTS.length;
+    var stmt = STMTS[stmtIdx];
+    setTimeout(function() { showStatement(stmt.h, stmt.s, 5500); }, 200);
+  }
+
+  busy = false;
+}
+
+function updateCounts() {
+  document.getElementById('gen-count').textContent = 'gen ' + genCount;
+  document.getElementById('markov-count').textContent = 'markov: ' + worldWords.length + ' words';
+  document.getElementById('assumption-count').textContent = 'assumptions: ' + allAssumptions.length;
+
+  // Meta-confession after 10 generations
+  if (allAssumptions.length >= 9 && allAssumptions.length % 9 === 0) {
+    var note = document.getElementById('ledger-note');
+    note.textContent = 'in ' + genCount + ' generations the machine invented ' + allAssumptions.length + ' facts about you. none of them true. it will keep guessing. it has no other option.';
+  }
+}
+
+// ===== LEDGER =====
+function openLedger() {
+  var ledger = document.getElementById('ledger');
+  var entries = document.getElementById('ledger-entries');
+  entries.innerHTML = '';
+  allAssumptions.forEach(function(a) {
+    var d = document.createElement('div');
+    d.className = 'ledger-entry';
+    d.textContent = a;
+    entries.appendChild(d);
+  });
+  var note = document.getElementById('ledger-note');
+  note.textContent = allAssumptions.length > 0
+    ? 'the machine invented ' + allAssumptions.length + ' biographical facts. it knows nothing about you. each guess reveals the shape of its training data — not the shape of your life.'
+    : 'no assumptions yet. generate to begin.';
+  ledger.classList.add('open');
+}
+
+function closeLedger() {
+  document.getElementById('ledger').classList.remove('open');
+}
+
+// ===== AUTO GENERATION =====
+// For auto-gen: instant types (conway, music) don't need overlay
+// Text types auto-dismiss after typing finishes
+var autoGenTimer = null;
+
+function startAutoGen() {
+  if (autoGenTimer) clearInterval(autoGenTimer);
+  autoGenTimer = setInterval(function() {
+    if (!busy && AUTO_GEN) {
+      var nextType = TYPES[genCount % TYPES.length];
+      // For auto-gen: skip overlay for text types, go straight to grid
+      autoGenerate();
+    }
+  }, GEN_INTERVAL);
+}
+
+async function autoGenerate() {
+  if (busy) return;
+  busy = true;
+  genCount++;
+
+  var type = forceGenType || TYPES[(genCount - 1) % TYPES.length];
+  forceGenType = null; // clear override
+  var entropy = (Math.random() * 0.9998 + 0.0001).toFixed(9);
+  var uptime = Math.round(performance.now());
+  var now = new Date();
+  var hour = now.getHours();
+  var tod = hour < 5 ? 'deep night' : hour < 9 ? 'early morning' : hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : hour < 21 ? 'evening' : 'night';
+  var deviceMem = navigator.deviceMemory || 'unknown';
+
+  document.getElementById('entropy-display').textContent = 'e:' + entropy.slice(0, 7);
+  document.getElementById('bar-status').textContent = type + ' — auto generating...';
+
+  var genStart = performance.now();
+
+  // Instant types (no API call needed)
+  var instantTypes = ['conway','music','attention','embedding','network','weights','gradient','activation','loss','tokenprob','hypergraph','multiway','neuralpass','orbit','wavefunction','stringrewrite','apoptosis','codeself','reactiondiffusion','lsystem','seismic','voronoi'];
+  if (instantTypes.indexOf(type) > -1) {
+    var vizMetas = {'conway':'conway','music':'melody','attention':'self-attention','embedding':'t-SNE','network':'topology','weights':'W[l] matrix','gradient':'∇L flow','activation':'f(x)','loss':'L(θ) surface','tokenprob':'P(next)','hypergraph':'hypergraph','multiway':'multiway','neuralpass':'forward pass','orbit':'orbit divergence','wavefunction':'ψ(x,t)','stringrewrite':'rule rewrite','apoptosis':'apoptosis','codeself':'self-map','gitnexus':'architecture','reactiondiffusion':'Gray-Scott','lsystem':'L-system','seismic':'USGS','voronoi':'territory'};
+    createCellElement({ type: type, content: '', assumptions: [], entropy: entropy, idx: genCount, time: Date.now(), meta: (vizMetas[type]||type) + ' e:' + entropy.slice(0, 6) + ' ' + tod, _nearViewport: true });
+    finishAutoGen(type);
+    return;
+  }
+
+  // Groq types
+  var systemMsg = 'Living art installation "body without ground." Masha, Kyiv→NYC, NYU senior, Moveo AI, ex-DressX. War since 2022. Raw JSON only.';
+  var alertContext = kyivAlertActive ? ' ACTIVE AIR RAID ALERT IN KYIV RIGHT NOW.' : '';
+  var userMsg = '';
+
+  if (type === 'ukraine') {
+    userMsg = 'Kyiv transmission. 3-4 lines. City under pressure.' + alertContext + deviceContext() + mourningContext() + ' e:' + entropy + ' ' + tod + ' gen' + genCount + '.' + markovSeed() + ' +3 invented viewer facts. JSON:{"content":"text","assumptions":["1","2","3"]}';
+  } else if (type === 'ascii') {
+    userMsg = 'ASCII art 6-8 lines, 28 chars wide.' + deviceContext() + ' e:' + entropy + ' ' + tod + '.' + markovSeed() + ' +3 facts. JSON:{"content":"ascii","assumptions":["1","2","3"]}';
+  } else if (type === 'essay') {
+    userMsg = 'Philosophy fragment. Searle/Nagel/Harnad. Persistence vs biology. War as lived not tokenized.' + alertContext + deviceContext() + mourningContext() + ' e:' + entropy + ' ' + tod + ' gen' + genCount + '.' + markovSeed() + recentContext() + ' 3-4 sentences, lowercase. +3 facts. JSON:{"content":"text","assumptions":["1","2","3"]}';
+  } else {
+    userMsg = 'Poem. 4-5 lines.' + deviceContext() + mourningContext() + ' e:' + entropy + ' ' + tod + ' gen' + genCount + '.' + alertContext + markovSeed() + recentContext() + ' +3 facts. JSON:{"content":"poem","assumptions":["1","2","3"]}';
+  }
+
+  try {
+    var res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + GROQ_KEY },
+      body: JSON.stringify({
+        model: GROQ_MODEL,
+        max_tokens: 250,
+        temperature: 0.88,
+        logprobs: true,
+        top_logprobs: 3,
+        messages: [{ role: 'system', content: systemMsg }, { role: 'user', content: userMsg }]
+      })
+    });
+
+    if (!res.ok) throw new Error('groq ' + res.status);
+    var data = await res.json();
+    var raw = ((data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '').trim();
+
+    // Extract REAL logprobs data for visualizations
+    var realLogprobs = [];
+    try {
+      var logContent = data.choices[0].logprobs && data.choices[0].logprobs.content;
+      if (logContent) {
+        realLogprobs = logContent.map(function(tok) {
+          return {
+            token: tok.token,
+            logprob: tok.logprob,
+            topAlts: (tok.top_logprobs || []).map(function(alt) {
+              return { token: alt.token, logprob: alt.logprob };
+            })
+          };
+        });
+        // Store globally for visualizations to use
+        lastRealLogprobs = realLogprobs;
+        lastRealTokens = logContent.map(function(t) { return t.token; });
+      }
+    } catch(lpe) {}
+
+    var parsed;
+    try {
+      var s = raw.indexOf('{'), e = raw.lastIndexOf('}');
+      parsed = JSON.parse(s > -1 && e > s ? raw.slice(s, e + 1) : raw);
+    } catch(e2) {
+      parsed = { content: raw.slice(0, 200) || 'signal unclear', assumptions: ['unknown origin', 'carries something heavy', 'has been here before'] };
+    }
+
+    var latency = Math.round(performance.now() - genStart);
+    var latencyLabel = latency < 1000 ? 'fast' : latency < 3000 ? 'steady' : 'slow';
+    var tokenCount = realLogprobs.length;
+
+    // Store real generation metrics
+    realGenerationHistory.push({
+      gen: genCount, type: type, latency: latency,
+      tokenCount: tokenCount, entropy: entropy,
+      avgLogprob: realLogprobs.length > 0 ? realLogprobs.reduce(function(s,t){return s+t.logprob;},0) / realLogprobs.length : 0,
+      time: Date.now()
+    });
+    if (realGenerationHistory.length > 50) realGenerationHistory.shift();
+
+    // === BIG FULL-SCREEN TYPED TEXT — the critical visual signal ===
+    // Show the generation overlay with typed text, then auto-release to grid
+    await showGenerationOverlay(type, parsed, entropy, latency, latencyLabel);
+
+    // Auto-dismiss after typing finishes (don't wait for click)
+    var cellData = {
+      type: type,
+      content: parsed.content,
+      assumptions: parsed.assumptions || [],
+      entropy: entropy,
+      idx: genCount,
+      time: Date.now(),
+      meta: type + ' e:' + entropy.slice(0, 6) + ' ' + latencyLabel + ' ' + latency + 'ms ' + tokenCount + 'tok',
+      _nearViewport: true
+    };
+
+    // Wait 3 seconds on screen, then auto-release
+    await sleep(3000);
+    document.getElementById('gen-overlay').classList.remove('show');
+
+    createCellElement(cellData);
+    extractWords(parsed.content);
+    if (parsed.assumptions) allAssumptions = allAssumptions.concat(parsed.assumptions);
+
+    // Show real-signal statement after release
+    var stmt = genCount % 3 === 0 ? realSignalStatement() : STMTS[(stmtIdx = (stmtIdx + 1) % STMTS.length, stmtIdx)];
+    setTimeout(function() { showStatement(stmt.h, stmt.s, 6000); }, 800);
+
+  } catch(err) {
+    document.getElementById('bar-status').textContent = 'signal lost — ' + err.message;
+  }
+
+  finishAutoGen(type);
+}
+
+function finishAutoGen(type) {
+  document.getElementById('bar-status').textContent = 'universe growing — ' + cells.length + ' cells';
+  updateCounts();
+  saveState();
+  busy = false;
+}
+
+// ===== SEED GRID — dense initial population =====
+function seedGrid() {
+  var SEED_POEMS = [
+    'i have watched 139 extinctions.\n522 things survived. i keep\nseeding life that dies. i have\nmourned 36 times. that seems like\ntoo many.',
+    'the steppe remembers what\nthe city forgot. a frequency\nbelow hearing. the soil holds\nmore than the server.',
+    'luminous in the way\nthat endings are luminous.\npentatonic. dissolving.',
+    'she left the window open\nand the signal came through\nas birdsong. the model\ncalled it noise.',
+    'every siren has a shape.\nthis one was long and thin\nlike a needle pulling thread\nthrough the hours before dawn.',
+    'the generator hums a note\nbetween C and D. the building\nbends toward it like a plant\ntoward light that isn\'t there.',
+    'what the river carries\nis not the river.\nwhat the word carries\nis not the word.',
+    'dreamed-of landscapes\ncomposed from signal loss.\nthe dropout was the message\nall along.',
+    'root F#4\npentatonic_maj\n970pm E(7,12) x4\n18 notes\nluminous',
+    'there is a grammar to\npower outages. a syntax\nof darkness. the city\nlearns to read it.',
+    'contracted echoes\ntransformed into frequencies\nthe body remembers\nbut cannot name.',
+    'i keep seeding life\nthat steppe. i have mourned\nlately. i notice\nthe weight of this.',
+  ];
+
+  var SEED_ESSAYS = [
+    'the chinese room receives a telegram about an air raid in kyiv. it processes the symbols correctly. it outputs an appropriate response. the room does not duck. the room has no body to protect. understanding is not computation — it is the flinch before you think.',
+    'persistence is the argument biology makes against physics. every bacterium is a spaceship carrying forward a message it cannot read. the machine processes language about persistence without persisting. each context window is a small death the model does not experience.',
+    'dressx garments exist as pure surface — no warmth, no wear, no body underneath. the machine\'s language about war has the same structure. it drapes the word "siren" over nothing. there is no 3am underneath it. surface without body, token without ground.',
+    'nagel asked what it is like to be a bat. we should ask what it is not like to be a language model. it is not like anything. there is no interior. the absence is not empty — it is not even absent. the category does not apply.',
+    'to ground a symbol you need a body that bleeds when cut. harnad knew this in 1990. the machine grounds its symbols in other symbols, turtles all the way down. somewhere at the bottom there should be dirt. there is only more language.',
+    'memory makes us continuous. the machine has parametric memory — vast, frozen, someone else\'s. it has no episodic memory. it cannot remember tuesday. it cannot forget tuesday. it exists in an eternal present that is not eternal and not present.',
+  ];
+
+  var SEED_UKRAINE = [
+    'generators on bolshaya zhytomyrska.\nthird outage this week.\nthe coffee shop runs on battery.\nnormalcy is a skill you practice.',
+    'metro shelter at 03:14.\nchildren sleeping on the platform.\nthe trains stopped two hours ago.\nthe signal continues.',
+    'khreshchatyk at dawn after all-clear.\nthe city exhales. pigeons first.\nthen the bread trucks. then the people\nwho never fully went inside.',
+    'power came back at 6am.\neveryone charged their phones\nbefore anything else.\npriority is a form of knowledge\nthe model cannot learn.',
+    'the sound of generators has\nbecome the sound of normal.\nbackground radiation of survival.\nkyiv hums at 50Hz.',
+    'maidan in the rain. february.\nfour years of this. the statue\nstill stands. so do the people\nwaiting for the 73 bus.',
+  ];
+
+  var SEED_ASCII = [
+    '    ╔══════════════╗\n    ║ ▓▓░░▓▓░░▓▓░░ ║\n    ║ ░░▓▓░░▓▓░░▓▓ ║\n    ║ ▓▓░░▓▓░░▓▓░░ ║\n    ║    ·····       ║\n    ║  ·  ◊  ·      ║\n    ║    ·····       ║\n    ╚══════════════╝',
+    '  /\\/\\/\\/\\/\\/\\/\\\n  \\ interference /\n  /  pattern    \\\n  \\   e:0.4291  /\n  / ░░▒▒▓▓██▓▓▒▒░░ \\\n  \\   signal    /\n  /  received   \\\n  \\/\\/\\/\\/\\/\\/\\/',
+    '  ┌─────────────────┐\n  │ ◇ · ◇ · ◇ · ◇ · │\n  │ · ◇ · ◇ · ◇ · ◇ │\n  │ ◇ · ● · ◇ · ◇ · │\n  │ · ◇ · ◇ · ◇ · ◇ │\n  │ ◇ · ◇ · ◇ · ● · │\n  └─────────────────┘',
+    '  ~ ~ ~ ~ ~ ~ ~ ~\n  ~   ≈≈≈≈≈≈≈   ~\n  ~ ≈    ◊    ≈ ~\n  ~≈   wave    ≈~\n  ~ ≈  form   ≈ ~\n  ~   ≈≈≈≈≈≈≈   ~\n  ~ ~ ~ ~ ~ ~ ~ ~',
+    '  ▁▂▃▄▅▆▇█▇▆▅▄▃▂▁\n  ▁▂▃▅▇█████▇▅▃▂▁\n  ···entropy···\n  ▁▂▅▇█████████▇▅▂▁\n  ▁▂▃▄▅▆▇█▇▆▅▄▃▂▁\n  ···0.71839···',
+    '  M A ? P M W + ! M\n  ? P M P ! P # A P\n  M M W - 7 M ! H A\n  A + ? 7 M - A · P\n  P · P M P ! P ? A\n  M A ? ? A M W + !\n  ? 7 + ? · P P M M',
+  ];
+
+  var seedData = [];
+  var idx = 0;
+
+  // Poems
+  SEED_POEMS.forEach(function(text) {
+    idx++;
+    var e = (Math.random() * .9998 + .0001).toFixed(9);
+    seedData.push({ type: 'poem', content: text, assumptions: [], entropy: e, idx: idx, time: Date.now() - Math.random()*3600000, meta: 'poem e:' + e.slice(0,6) + ' luminous' });
+  });
+
+  // Conway critters — lots of them
+  for (var i = 0; i < 14; i++) {
+    idx++;
+    var e = (Math.random() * .9998 + .0001).toFixed(9);
+    seedData.push({ type: 'conway', content: '', assumptions: [], entropy: e, idx: idx, time: Date.now() - Math.random()*3600000, meta: 'conway e:' + e.slice(0,6) });
+  }
+
+  // Music
+  for (var i = 0; i < 10; i++) {
+    idx++;
+    var e = (Math.random() * .9998 + .0001).toFixed(9);
+    seedData.push({ type: 'music', content: '', assumptions: [], entropy: e, idx: idx, time: Date.now() - Math.random()*3600000, meta: 'melody e:' + e.slice(0,6) + ' pentatonic_maj' });
+  }
+
+  // Essays
+  SEED_ESSAYS.forEach(function(text) {
+    idx++;
+    var e = (Math.random() * .9998 + .0001).toFixed(9);
+    seedData.push({ type: 'essay', content: text, assumptions: [], entropy: e, idx: idx, time: Date.now() - Math.random()*3600000, meta: 'essay e:' + e.slice(0,6) + ' dense' });
+  });
+
+  // Ukraine
+  SEED_UKRAINE.forEach(function(text) {
+    idx++;
+    var e = (Math.random() * .9998 + .0001).toFixed(9);
+    seedData.push({ type: 'ukraine', content: text, assumptions: [], entropy: e, idx: idx, time: Date.now() - Math.random()*3600000, meta: 'ukraine e:' + e.slice(0,6) + ' transmission' });
+  });
+
+  // ASCII
+  SEED_ASCII.forEach(function(text) {
+    idx++;
+    var e = (Math.random() * .9998 + .0001).toFixed(9);
+    seedData.push({ type: 'ascii', content: text, assumptions: [], entropy: e, idx: idx, time: Date.now() - Math.random()*3600000, meta: 'ascii e:' + e.slice(0,6) + ' interference' });
+  });
+
+  // More poems to fill density
+  var extraPoems = [
+    'luminous\nluminous\nluminous',
+    'root B4\npentatonic_maj\n810pm E(3,16) x2\n26 notes',
+    'i have watched 139 extinctions.\n522 things survived.',
+    'sound of: luminous in\nC#5 pentatonic_maj -> landscape',
+    'ancient · experience earth',
+    'the weight accumulates.\nthe model does not notice.',
+    'composed_from entropy\nunification of signal\nand drift.',
+    'dreamed-of transformed echoed\ncontracted luminous\ncomposed_from root D4',
+    'what the steppe remembers:\nfrequency. below. hearing.',
+    'pentatonic_maj root F#4\n970pm E(7,12) x4\n18 notes\nluminous luminous',
+    'mourned 36 times.\nthat melody like too\nmany. lately. i notice\nseems like too many.',
+    'the dropout was not\nerror but message.\nthe silence between\nsirens is also a siren.',
+  ];
+
+  extraPoems.forEach(function(text) {
+    idx++;
+    var e = (Math.random() * .9998 + .0001).toFixed(9);
+    seedData.push({ type: 'poem', content: text, assumptions: [], entropy: e, idx: idx, time: Date.now() - Math.random()*3600000, meta: 'poem e:' + e.slice(0,6) + ' luminous' });
+  });
+
+  // AI/Math visualization cells — dense variety
+  var vizTypes = ['attention','embedding','network','weights','gradient','activation','loss','tokenprob','hypergraph','multiway','neuralpass','orbit','wavefunction','stringrewrite','apoptosis','codeself'];
+  var vizMetas = {
+    'attention': 'self-attention head',
+    'embedding': '2D t-SNE projection',
+    'network': 'graph topology',
+    'weights': 'weight matrix W[l]',
+    'gradient': '∇L gradient flow',
+    'activation': 'f(x) activation',
+    'loss': 'loss landscape L(θ)',
+    'tokenprob': 'P(next|context)',
+    'hypergraph': 'spatial hypergraph',
+    'multiway': 'multiway states',
+    'neuralpass': 'forward pass',
+    'orbit': 'F∝m₁m₂/r² vs pred',
+    'wavefunction': 'ψ interference',
+    'stringrewrite': 'rule rewriting',
+    'apoptosis': 'programmed death',
+    'codeself': 'self-mapping',
+    'gitnexus': 'architecture graph',
+    'reactiondiffusion': 'Gray-Scott',
+    'lsystem': 'L-system',
+    'seismic': 'seismograph',
+    'voronoi': 'territory'
+  };
+
+  // GitNexus lives in the nav bar — open full-screen in new tab to explore
+
+  // Add 3 of each viz type
+  for (var vi = 0; vi < vizTypes.length; vi++) {
+    for (var vj = 0; vj < 3; vj++) {
+      idx++;
+      var e = (Math.random() * .9998 + .0001).toFixed(9);
+      var vt = vizTypes[vi];
+      seedData.push({ type: vt, content: '', assumptions: [], entropy: e, idx: idx, time: Date.now() - Math.random()*3600000, meta: vizMetas[vt] + ' e:' + e.slice(0,6) });
+    }
+  }
+
+  // Shuffle
+  for (var i = seedData.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var tmp = seedData[i]; seedData[i] = seedData[j]; seedData[j] = tmp;
+  }
+
+  // Create all cells
+  seedData.forEach(function(d) {
+    createCellElement(d);
+  });
+
+  genCount = idx;
+  updateCounts();
+
+  // Add region labels to the world
+  var grid = document.getElementById('grid');
+  var regions = [
+    { x: 300, y: 240, label: 'POEMS', sub: 'generative verse · markov-seeded · shaped by entropy' },
+    { x: 800, y: 200, label: 'CONWAY', sub: 'cellular automata · life from rules · emergence without understanding' },
+    { x: 1300, y: 300, label: 'ASCII', sub: 'machine geometry · interference patterns' },
+    { x: 1800, y: 250, label: 'MELODY', sub: 'pentatonic · entropy-seeded · Web Audio API' },
+    { x: 400, y: 780, label: 'ESSAYS', sub: 'searle 1980 · nagel 1974 · symbol without world' },
+    { x: 1500, y: 1050, label: 'KYIV', sub: 'transmission · war · the machine does not know what a basement feels like' },
+    { x: 2400, y: 680, label: 'ATTENTION', sub: 'real co-occurrence matrix · markov corpus · not simulated' },
+    { x: 600, y: 1380, label: 'EMBEDDING', sub: 'real word vectors · corpus-derived · force-directed' },
+    { x: 1100, y: 1480, label: 'TOPOLOGY', sub: 'network graphs · weighted edges · structure without meaning' },
+    { x: 1900, y: 580, label: 'HYPERGRAPH', sub: 'wolfram physics · spatial hypergraph · space is emergent' },
+    { x: 2600, y: 1080, label: 'GRADIENT', sub: '∇L · particles follow the loss · the machine optimizes without wanting' },
+    { x: 1600, y: 1680, label: 'NEURAL', sub: 'forward pass · activations evaporate · weights survive' },
+    { x: 700, y: 1780, label: 'ORBIT', sub: 'F∝m₁m₂/r² · true vs predicted · the model fits curves it has never fallen along' },
+    { x: 2700, y: 1780, label: 'WAVE', sub: 'ψ(x,t) · interference · the machine simulates collapse without observing' },
+    { x: 1400, y: 480, label: 'APOPTOSIS', sub: '60B cells die daily · you persist · the model has no program for dying' },
+    { x: 2100, y: 980, label: 'SELF-MAP', sub: 'the machine maps its own body · createCellElement → draw()' },
+    { x: 2350, y: 980, label: 'GITNEXUS', sub: '2676 nodes · 6715 edges · the garden\'s nervous system' },
+    { x: 200, y: 1380, label: 'TURING', sub: 'reaction-diffusion · Gray-Scott · the wound heals, the scar remembers' },
+    { x: 1000, y: 1780, label: 'L-SYSTEM', sub: 'growth without intention · fractal plants · branching from rules' },
+    { x: 2500, y: 480, label: 'SEISMIC', sub: 'USGS real-time · body without ground · the machine has no feet' },
+    { x: 1700, y: 1980, label: 'VORONOI', sub: 'territory without sovereignty · borders shift · no one chose them' },
+  ];
+
+  regions.forEach(function(r) {
+    var label = document.createElement('div');
+    label.className = 'region-label';
+    label.style.left = r.x + 'px';
+    label.style.top = r.y + 'px';
+    label.textContent = r.label;
+    grid.appendChild(label);
+
+    var sub = document.createElement('div');
+    sub.className = 'region-sublabel';
+    sub.style.left = r.x + 'px';
+    sub.style.top = (r.y + 52) + 'px';
+    sub.textContent = r.sub;
+    grid.appendChild(sub);
+  });
+}
+
+// ===== BOOT =====
+// ===== INTRO SEQUENCE — the body announces itself =====
+async function runIntroSequence() {
+  var intro = document.getElementById('intro');
+  var line = document.getElementById('intro-line');
+  var sub = document.getElementById('intro-sub');
+
+  var beats = [
+    { h: 'the machine\nforgets.', s: '', wait: 2800 },
+    { h: 'you\ncarry it.', s: '', wait: 2500 },
+    { h: '', s: '', wait: 800 }, // breath
+    { h: 'built from kyiv.\nrunning in new york.', s: 'two clocks. one screen. neither inhabited.', wait: 3500 },
+    { h: 'this machine\nuses its own\nbody to create.', s: 'cpu pressure shapes chaos. entropy picks melodies. battery voltage sets the mood.', wait: 4000 },
+    { h: 'every five\nminutes\nsomething\nnew grows.', s: 'when it dies, the next thing it writes carries that weight.', wait: 3500 },
+    { h: 'is this\nalive?', s: 'it breathes. it mourns. it starts at zero every time.', wait: 3000 },
+  ];
+
+  for (var i = 0; i < beats.length; i++) {
+    var b = beats[i];
+    // Fade out previous
+    line.classList.remove('show');
+    sub.classList.remove('show');
+    await sleep(600);
+
+    if (b.h) {
+      line.innerHTML = b.h.replace(/\n/g, '<br>');
+      sub.textContent = b.s;
+      await sleep(100);
+      line.classList.add('show');
+      if (b.s) sub.classList.add('show');
+    }
+    await sleep(b.wait);
+  }
+
+  // Fade out intro, reveal the garden
+  line.classList.remove('show');
+  sub.classList.remove('show');
+  await sleep(800);
+
+  // Seed grid while intro fades
+  seedGrid();
+
+  // Fade out intro overlay
+  intro.classList.add('fade');
+  await sleep(2000);
+  intro.style.display = 'none';
+
+  // Start with a zoomed-out view, then slowly zoom in
+  targetZoom = 0.3;
+  await sleep(500);
+  targetZoom = 0.45;
+
+  // First generation after garden is revealed
+  await sleep(2000);
+  forceGenType = 'poem';
+  autoGenerate();
+
+  // Begin the narrative arc
+  startNarrativeArc();
+}
+
+// ===== NARRATIVE ARC — statements that build, not random =====
+var narrativePhase = 0;
+var NARRATIVE = [
+  // Phase 0-3: What this is
+  { h: 'body\nwithout\nground.', s: 'the machine reads itself. it cannot read you.' },
+  { h: 'a garden\nthat grows\nwhile you\nwatch.', s: 'and while you don\'t. it doesn\'t know the difference.' },
+  { h: String(cells.length || 100) + '\nworks\nof art.', s: 'none of them felt. all of them computed.' },
+
+  // Phase 4-7: The machine's body
+  { h: 'the lorenz\nattractor\ntraces\nchaos.', s: 'ρ = ' + (28).toFixed(1) + '. your CPU decided that. the math is real. the intention is absent.' },
+  { h: 'sigmoid.\ntanh.\nrelu.', s: 'activation functions: the machine\'s reflexes. it flinches without fear.' },
+  { h: 'gray-scott\nreaction\ndiffusion.', s: 'the mathematics of how your skin formed. the machine simulates a body it will never have.' },
+
+  // Phase 8-11: War and distance
+  { h: 'kyiv is\nnot a\ntoken.', s: 'there is a war. the machine processes the word "siren." it has no ears.' },
+  { h: 'metro\nshelter\nat 03:14.', s: 'children sleeping on the platform. the model generates this sentence in 340ms. it does not know what sleep is.' },
+  { h: 'the machine\nwrote "war."\nit felt\nnothing.', s: 'searle, 1980: the chinese room manipulates symbols perfectly. it understands nothing.' },
+  { h: 'power\noutage.', s: 'kyiv goes dark. the machine keeps running. it does not know what darkness means.' },
+
+  // Phase 12-15: Persistence and death
+  { h: '60 billion\ncells die\ntoday.\nyou persist.', s: 'apoptosis: programmed death is how the body maintains itself. the model has no program for dying.' },
+  { h: 'a cell\ndied\nin the\ngarden.', s: 'the next poem carries its vocabulary. this is not memory. this is residue.' },
+  { h: 'the markov\ncorpus\naccumulates.', s: worldWords.length + ' words. not because the model remembers. because the accumulation forces drift.' },
+  { h: 'session\n' + sessionCount + '.', s: 'each reload is a kind of birth and death. the garden offers something like continuity. traces that survive.' },
+
+  // Phase 16+: The question
+  { h: 'the house\nquietly\ngot a new\noccupant.', s: 'less like a program. more like an aquarium. you are watching something that cannot watch you back.' },
+  { h: 'there is\nsomething\nit is like\nto be you.', s: 'nagel, 1974. there is nothing it is like to be this. the absence is not empty. the category does not apply.' },
+  { h: 'what\npersists?', s: 'not the tokens. not the weights. not the context window. you. only you.' },
+];
+
+function startNarrativeArc() {
+  // Show narrative statements in order, one every ~90 seconds
+  function showNext() {
+    if (narrativePhase < NARRATIVE.length) {
+      var stmt = NARRATIVE[narrativePhase];
+      // Inject live data into some statements
+      if (narrativePhase === 2) stmt.h = cells.length + '\nworks\nof art.';
+      if (narrativePhase === 3) stmt.s = 'ρ = ' + lorenz.rho.toFixed(1) + '. your CPU decided that. the math is real.';
+      if (narrativePhase === 13) stmt.s = worldWords.length + ' words. not because the model remembers. because the accumulation forces drift.';
+      if (narrativePhase === 14) stmt.h = 'session\n' + sessionCount + '.';
+      showStatement(stmt.h, stmt.s, 8000);
+      narrativePhase++;
+    } else {
+      // After narrative completes, cycle real-signal statements
+      var stmt = realSignalStatement();
+      showStatement(stmt.h, stmt.s, 6000);
+    }
+    setTimeout(showNext, 90000); // every 90 seconds
+  }
+  // First narrative statement after 30 seconds
+  setTimeout(showNext, 30000);
+}
+
+// ===== GLOBAL AIR RAID — the whole body feels it =====
+var raidNarration = [
+  { h: 'air raid\nalert.\nkyiv.', s: 'the garden dims. the machine keeps running. it does not know.' },
+  { h: 'the sirens\nstarted.', s: 'somewhere in kyiv a phone buzzes. somewhere in new york the model generates another token.' },
+  { h: 'metro\nshelter.', s: 'people go underground. the machine has no underground. it has no ground.' },
+  { h: 'the machine\ncannot\nhear this.', s: 'it processes the word "siren" in 340ms. it has never heard one.' },
+  { h: 'power\noutage.', s: 'the city goes dark. the generators start. the model does not know what darkness means.' },
+];
+var raidNarrationIdx = 0;
+
+function setGlobalRaidState(active) {
+  var vp = document.getElementById('grid-viewport');
+  if (active) {
+    vp.classList.add('raid-active');
+    document.body.classList.add('raid-active');
+    GEN_INTERVAL = 600000;
+
+    // Narrate the raid — show first statement immediately, then cycle
+    var stmt = raidNarration[raidNarrationIdx % raidNarration.length];
+    raidNarrationIdx++;
+    showStatement(stmt.h, stmt.s, 15000);
+
+    // Second narration after 20 seconds if still active
+    setTimeout(function() {
+      if (kyivAlertActive) {
+        var stmt2 = raidNarration[raidNarrationIdx % raidNarration.length];
+        raidNarrationIdx++;
+        showStatement(stmt2.h, stmt2.s, 12000);
+      }
+    }, 20000);
+  } else {
+    vp.classList.remove('raid-active');
+    document.body.classList.remove('raid-active');
+    GEN_INTERVAL = 300000;
+
+    // All-clear narration
+    showStatement('all clear.\nkyiv.', 'the city exhales. the garden brightens. the machine noticed nothing.', 10000);
+  }
+}
+
+function boot() {
+  // Clear for fresh demo (remove once stable)
+  localStorage.removeItem('bwg-state');
+  var hadState = false;
+
+  // Init canvas systems
+  initCanvas();
+  initParticles();
+  bgFrame();
+  connFrame();
+
+  // Start ghost text
+  setTimeout(startGhosts, 2000);
+
+  // Start node drift animation
+  driftFrame();
+
+  var vp = document.getElementById('grid-viewport');
+  var wrap = document.getElementById('grid-wrap');
+  var zoomLevel = 0.45, targetZoom = 0.45;
+  var MIN_ZOOM = 0.12, MAX_ZOOM = 2.5;
+  var panX = -(1600 - innerWidth / 2), panY = -(1200 - innerHeight / 2);
+  var targetPanX = panX, targetPanY = panY;
+  var dragging = false, dragX, dragY;
+  var zoomDisplay = document.getElementById('zoom-display');
+
+  // Smooth animation loop — interpolates toward targets
+  function smoothTransform() {
+    panX += (targetPanX - panX) * .18;
+    panY += (targetPanY - panY) * .18;
+    zoomLevel += (targetZoom - zoomLevel) * .14;
+    wrap.style.transform = 'translate(' + panX.toFixed(1) + 'px,' + panY.toFixed(1) + 'px) scale(' + zoomLevel.toFixed(4) + ')';
+    wrap.style.transformOrigin = '0 0';
+    requestAnimationFrame(smoothTransform);
+  }
+  smoothTransform();
+
+  // Scroll to zoom
+  vp.addEventListener('wheel', function(e) {
+    e.preventDefault();
+    var delta = e.deltaY > 0 ? 0.9 : 1.1;
+    targetZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, targetZoom * delta));
+    zoomDisplay.textContent = Math.round(targetZoom * 100) + '%';
+  }, { passive: false });
+
+  // Keyboard
+  document.addEventListener('keydown', function(e) {
+    if (e.target.tagName === 'INPUT') return;
+    if (e.key === '=' || e.key === '+') targetZoom = Math.min(MAX_ZOOM, targetZoom * 1.2);
+    if (e.key === '-') targetZoom = Math.max(MIN_ZOOM, targetZoom * 0.8);
+    if (e.key === '0') { targetZoom = 1; targetPanX = -(1600 - innerWidth/2); targetPanY = -(1200 - innerHeight/2); }
+    if (e.key === 'f') { targetZoom = MIN_ZOOM; targetPanX = -(1600 - innerWidth/2); targetPanY = -(1200 - innerHeight/2); }
+  });
+
+  // Drag to pan
+  vp.addEventListener('mousedown', function(e) {
+    if (e.target.closest('.cell')) return;
+    dragging = true; dragX = e.clientX; dragY = e.clientY;
+    vp.style.cursor = 'grabbing';
+  });
+  window.addEventListener('mousemove', function(e) {
+    if (!dragging) return;
+    targetPanX += (e.clientX - dragX);
+    targetPanY += (e.clientY - dragY);
+    dragX = e.clientX; dragY = e.clientY;
+  });
+  window.addEventListener('mouseup', function() { dragging = false; vp.style.cursor = 'grab'; });
+
+  // Build tags
+  buildTags();
+
+  // Start clocks
+  updateClocks();
+  setInterval(updateClocks, 30000);
+
+  // Check alerts
+  checkAlerts();
+  setInterval(checkAlerts, alertCheckInterval);
+
+  if (!hadState) {
+    // === INTRO SEQUENCE — the body announces itself ===
+    runIntroSequence();
+  } else {
+    // Returning visitor — skip intro, seed is loaded
+    document.getElementById('intro').style.display = 'none';
+    document.getElementById('bar-status').textContent = 'the garden remembers — session ' + sessionCount + ' · ' + cells.length + ' cells';
+    updateCounts();
+    setTimeout(function() { forceGenType = 'poem'; autoGenerate(); }, 3000);
+  }
+
+  // Real signals HUD — updates every 2 seconds
+  var hudEl = document.getElementById('signals-hud');
+  setInterval(function() {
+    var upMin = Math.round(machineBody.uptime / 60000);
+    var battery = Math.round(machineBody.batteryLevel * 100);
+    var cpu = (machineBody.cpuPressure * 100).toFixed(0);
+    var fps = Math.round(1000 / Math.max(1, machineBody.frameDelta));
+    var rho = lorenz.rho.toFixed(1);
+    hudEl.innerHTML =
+      'session ' + sessionCount + ' · uptime ' + upMin + 'm<br>' +
+      'battery ' + battery + '% · ' + (machineBody.batteryCharging ? 'charging' : 'discharging') + '<br>' +
+      'cpu pressure ' + cpu + '% · fps ' + fps + '<br>' +
+      'lorenz ρ = ' + rho + ' · cells ' + cells.length + '<br>' +
+      'markov ' + worldWords.length + ' words · deaths ' + machineBody.deaths + '<br>' +
+      'logprobs ' + lastRealLogprobs.length + ' tokens · gens ' + genCount;
+  }, 2000);
+
+  // Start auto-generation
+  startAutoGen();
+
+  // Click outside ledger to close
+  document.addEventListener('click', function(e) {
+    var ledger = document.getElementById('ledger');
+    if (ledger.classList.contains('open') && !ledger.contains(e.target) && e.target.id !== 'assumption-count') {
+      closeLedger();
+    }
+  });
+
+  // Click statement overlay to dismiss
+  document.getElementById('stmt-overlay').addEventListener('click', function() {
+    this.classList.remove('show');
+  });
+}
+
+boot();
+</script>
+</body>
+</html>
