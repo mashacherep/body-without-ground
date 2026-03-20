@@ -1,0 +1,27 @@
+{
+  "name": "body-without-ground",
+  "version": "1.0.0",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mashacherep/body-without-ground.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mashacherep/body-without-ground/issues"
+  },
+  "homepage": "https://github.com/mashacherep/body-without-ground#readme",
+  "description": "",
+  "devDependencies": {
+    "three": "^0.183.2",
+    "vite": "^8.0.1"
+  }
+}

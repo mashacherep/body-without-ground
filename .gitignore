@@ -1,5 +1,9 @@
 GitNexus/
 node_modules/
+dist/
 .env
+.env.*
 .secrets
+*.local
 *.log
+.DS_Store
