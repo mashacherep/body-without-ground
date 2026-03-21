@@ -15,7 +15,7 @@ import { stopActiveViz } from './reading/viz.js'
 import { startAlertChecking, onAlertChange, isAlertActive } from './signals/alerts.js'
 import { holdBreath, releaseBreath } from './cosmos/breathing.js'
 import { showText } from './narrative/overlay.js'
-import { startLifeCycle } from './generation/lifecycle.js'
+import { startScheduler } from './generation/scheduler.js'
 import { initWhisper, updateWhisper } from './narrative/whisper.js'
 import { initClocks } from './signals/clocks.js'
 import { initSound, startDrone, fadeDrone, silenceDrone, restoreDrone, updateDroneBreathing, playBirthTone, playDeathTone } from './signals/sound.js'
@@ -84,7 +84,7 @@ document.addEventListener('click', handleFirstClick)
 // Run intro — seeds cosmos gradually during the text beats
 // After intro completes, start the life cycle and show sound prompt
 runIntro(camera).then(() => {
-  startLifeCycle()
+  startScheduler()
   // Show sound prompt after intro so the viewer knows to click
   if (soundPrompt && !soundStarted) soundPrompt.classList.add('visible')
 })
