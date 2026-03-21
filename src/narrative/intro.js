@@ -148,12 +148,48 @@ export async function runIntro(camera) {
     fadeIn: 600, hold: 2500, fadeOut: 1000,
   })
 
-  // ── Landing: centered, facing the cosmos ──
+  // ── Grand tour: orbit around the entire cosmos ──
   stopPullback()
   clearOverlay()
+
+  // Smooth orbit — camera circles the cosmos so you see everything
+  const ORBIT_DURATION = 8000 // 8 seconds
+  const ORBIT_RADIUS = 65
+  const ORBIT_HEIGHT = 20
+  const orbitStart = performance.now()
+
+  await new Promise(resolve => {
+    function orbitTick() {
+      const elapsed = performance.now() - orbitStart
+      const progress = Math.min(1, elapsed / ORBIT_DURATION)
+
+      // Ease in-out
+      const t = progress < 0.5
+        ? 2 * progress * progress
+        : 1 - Math.pow(-2 * progress + 2, 2) / 2
+
+      // Full 360° orbit
+      const angle = t * Math.PI * 2
+      camera.position.set(
+        Math.sin(angle) * ORBIT_RADIUS,
+        ORBIT_HEIGHT + Math.sin(t * Math.PI) * 10, // gentle vertical wave
+        Math.cos(angle) * ORBIT_RADIUS,
+      )
+      camera.lookAt(0, 0, 0)
+
+      if (progress < 1) {
+        requestAnimationFrame(orbitTick)
+      } else {
+        resolve()
+      }
+    }
+    requestAnimationFrame(orbitTick)
+  })
+
+  // Settle at final position facing the cosmos
   camera.position.set(0, 15, 55)
   camera.lookAt(0, 0, 0)
-  await sleep(2500)
+  await sleep(1500)
   setAutopilotSpeed(getBaseSpeed())
   unlockControls()
 }
