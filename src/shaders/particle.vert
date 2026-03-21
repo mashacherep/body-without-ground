@@ -22,7 +22,7 @@ void main() {
   vec3 pos = position * breathScale * localBreath;
   vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
 
-  gl_PointSize = aSize * (250.0 / -mvPosition.z);
-  gl_PointSize = clamp(gl_PointSize, 0.5, 20.0);
+  gl_PointSize = aSize * (180.0 / -mvPosition.z);
+  gl_PointSize = clamp(gl_PointSize, 0.5, 12.0);
   gl_Position = projectionMatrix * mvPosition;
 }
