@@ -34,6 +34,26 @@ renderer.setSize(innerWidth, innerHeight)
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2))
 document.body.appendChild(renderer.domElement)
 
+// Nebula background glow — large soft spheres for ambient galaxy light
+function addNebula(x, y, z, radius, color, opacity) {
+  const geo = new THREE.SphereGeometry(radius, 16, 16)
+  const mat = new THREE.MeshBasicMaterial({
+    color: new THREE.Color(color),
+    transparent: true,
+    opacity: opacity,
+    depthWrite: false,
+    side: THREE.BackSide,
+  })
+  const mesh = new THREE.Mesh(geo, mat)
+  mesh.position.set(x, y, z)
+  scene.add(mesh)
+}
+
+addNebula(40, 10, -30, 80, 0x1a1040, 0.08)   // deep purple
+addNebula(-60, -15, 20, 100, 0x0a1830, 0.06)  // deep blue
+addNebula(20, 25, 50, 70, 0x201008, 0.05)     // warm amber hint
+addNebula(-30, -10, -60, 90, 0x081520, 0.04)  // teal
+
 // Camera system (replaces raw OrbitControls)
 initCameraSystem(camera, renderer.domElement)
 

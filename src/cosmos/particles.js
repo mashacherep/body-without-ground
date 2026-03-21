@@ -9,7 +9,7 @@ import {
   behaviorEmbedding, behaviorReactionDiffusion
 } from './behaviors.js'
 
-const MAX_PARTICLES = 8000
+const MAX_PARTICLES = 16000
 
 let points = null
 let positions, colors, sizes, alphas, phases
@@ -51,7 +51,7 @@ export function initParticles(scene) {
   scene.add(points)
 
   // Ambient dust — fills the void between clusters
-  const DUST_COUNT = 1200
+  const DUST_COUNT = 2000
   for (let i = 0; i < DUST_COUNT; i++) {
     const idx = particleCount + i
     if (idx >= MAX_PARTICLES) break
@@ -71,7 +71,7 @@ export function initParticles(scene) {
     colors[idx * 3 + 2] = 0.6 + Math.random() * 0.15
 
     sizes[idx] = 0.8 + Math.random() * 1.5
-    alphas[idx] = 0.04 + Math.random() * 0.08 // very subtle
+    alphas[idx] = 0.02 + Math.random() * 0.05 // very subtle
     phases[idx] = Math.random() * Math.PI * 2
   }
   particleCount += Math.min(DUST_COUNT, MAX_PARTICLES - particleCount)
@@ -145,7 +145,7 @@ export function updateParticles(time, breathPhase) {
   }
 
   // Dust current flow — organized streams, not random
-  const dustStart = particleCount - 1200 // approximate dust particle range
+  const dustStart = particleCount - 2000 // approximate dust particle range
   if (dustStart > 0) {
     for (let i = Math.max(0, dustStart); i < particleCount; i++) {
       // Flowing stream pattern based on position
