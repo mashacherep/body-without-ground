@@ -77,9 +77,14 @@ function drawMap() {
   ctx.lineTo(w * 0.08, h * 0.55)
   ctx.lineTo(w * 0.03, h * 0.45)
   ctx.closePath()
-  ctx.strokeStyle = 'rgba(255,255,255,0.08)'
-  ctx.lineWidth = 0.5
+  ctx.strokeStyle = 'rgba(255,255,255,0.2)'
+  ctx.lineWidth = 0.8
   ctx.stroke()
+
+  // Label
+  ctx.font = '7px Courier New'
+  ctx.fillStyle = 'rgba(255,255,255,0.15)'
+  ctx.fillText('UKRAINE', 4, 8)
 
   // Get active alert regions
   const active = getActiveRegions()
@@ -109,7 +114,7 @@ function drawMap() {
       // Quiet — dim dot
       ctx.beginPath()
       ctx.arc(x, y, 1.5, 0, Math.PI * 2)
-      ctx.fillStyle = 'rgba(255,255,255,0.06)'
+      ctx.fillStyle = 'rgba(255,255,255,0.15)'
       ctx.fill()
     }
   }
