@@ -7,8 +7,11 @@ import { initAttractors, updateAttractors } from './cosmos/attractors.js'
 import { initFilaments, updateFilaments } from './cosmos/filaments.js'
 import { updateBreathing } from './cosmos/breathing.js'
 import { initCameraSystem, updateCameraSystem } from './camera/controls.js'
-import { updateReadingView, isInReadingView } from './camera/transitions.js'
+import { updateReadingView, isInReadingView, enterReadingView, exitReadingView } from './camera/transitions.js'
 import { runIntro } from './narrative/intro.js'
+import { findClickedCell } from './interaction/raycast.js'
+import { showReadingPanel, hideReadingPanel, isReadingPanelVisible } from './reading/panel.js'
+import { stopActiveViz } from './reading/viz.js'
 
 // Scene
 const scene = new THREE.Scene()
@@ -34,6 +37,41 @@ initFilaments(scene)
 
 // Run intro — seeds cosmos gradually during the text beats
 runIntro(camera)
+
+// Click to enter reading view
+renderer.domElement.addEventListener('click', (e) => {
+  // Don't trigger during intro or if already in reading view
+  if (isReadingPanelVisible()) return
+
+  const cell = findClickedCell(e, camera, renderer.domElement)
+  if (cell) {
+    enterReadingView(cell, camera)
+    // Delay panel appearance for cinematic timing
+    setTimeout(() => showReadingPanel(cell), 600)
+  }
+})
+
+// ESC or click overlay background to dismiss
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && isReadingPanelVisible()) {
+    dismissReadingView()
+  }
+})
+
+const readingOverlay = document.getElementById('reading-overlay')
+if (readingOverlay) {
+  readingOverlay.addEventListener('click', (e) => {
+    if (e.target === readingOverlay && isReadingPanelVisible()) {
+      dismissReadingView()
+    }
+  })
+}
+
+function dismissReadingView() {
+  stopActiveViz()
+  hideReadingPanel()
+  exitReadingView()
+}
 
 // Animation loop
 const clock = new THREE.Clock()
