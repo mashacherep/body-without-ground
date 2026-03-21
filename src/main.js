@@ -16,6 +16,7 @@ import { stopActiveViz } from './reading/viz.js'
 // Scene
 const scene = new THREE.Scene()
 scene.background = new THREE.Color(0x050508)
+scene.fog = new THREE.FogExp2(0x050508, 0.003)
 
 // Camera
 const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 5000)
@@ -88,7 +89,7 @@ function animate() {
   updateBirths(bufs.positions, bufs.alphas, cpm)
   updateDeaths(bufs.positions, bufs.alphas, bufs.colors, cpm)
   updateAttractors(0, 1)
-  updateFilaments()
+  updateFilaments(elapsed)
 
   // Camera: reading view takes priority, then the camera system handles autopilot/viewer
   if (!updateReadingView(dt, camera)) {

@@ -25,7 +25,7 @@ export function initFilaments(scene) {
   scene.add(lineSegments)
 }
 
-export function updateFilaments() {
+export function updateFilaments(time) {
   const cells = getAliveCells()
   let connIdx = 0
   const maxDist = 40
@@ -42,7 +42,8 @@ export function updateFilaments() {
 
       if (dist < maxDist) {
         const sameType = a.type === b.type
-        const alpha = (1 - dist / maxDist) * (sameType ? 0.35 : 0.08)
+        const basePulse = 0.5 + 0.5 * Math.sin(time * 1.5 + i * 0.7 + j * 1.3)
+        const alpha = (1 - dist / maxDist) * (sameType ? 0.25 + basePulse * 0.2 : 0.05 + basePulse * 0.05)
         const color = sameType ? CELL_TYPES[a.type].color : [0.6, 0.6, 0.55]
 
         const base = connIdx * 6
