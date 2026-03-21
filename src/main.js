@@ -76,31 +76,14 @@ document.addEventListener('click', handleFirstClick)
 const sessionCount = getSessionCount()
 const hasState = loadState()
 
-if (hasState && sessionCount > 1) {
-  // Returning visitor — skip intro, show welcome back
-  camera.position.set(0, 15, 55)
-  camera.lookAt(0, 0, 0)
-  import('./narrative/overlay.js').then(({ showText }) => {
-    showText(`session ${sessionCount}.`, {
-      subtitle: 'the garden kept growing while you were gone.',
-      fadeIn: 1200, hold: 4000, fadeOut: 1500,
-    })
-  })
-  setTimeout(() => {
-    startScheduler()
-    startNarrativeArc()
-    startAutoSave()
-    if (soundPrompt && !soundStarted) soundPrompt.classList.add('visible')
-  }, 2000)
-} else {
-  // First visit — run the full intro
-  runIntro(camera).then(() => {
-    startScheduler()
-    startNarrativeArc()
-    startAutoSave()
-    if (soundPrompt && !soundStarted) soundPrompt.classList.add('visible')
-  })
-}
+// Always run intro during development
+// TODO: re-enable returning visitor skip for production
+runIntro(camera).then(() => {
+  startScheduler()
+  startNarrativeArc()
+  startAutoSave()
+  if (soundPrompt && !soundStarted) soundPrompt.classList.add('visible')
+})
 
 // Air raid alerts — cosmos responds to real alerts in Kyiv
 startAlertChecking()
