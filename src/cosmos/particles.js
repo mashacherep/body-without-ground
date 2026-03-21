@@ -104,8 +104,8 @@ export function addCellParticles(cell, opts = {}) {
     colors[idx * 3 + 1] = typeDef.color[1]
     colors[idx * 3 + 2] = typeDef.color[2]
 
-    sizes[idx] = 3.5 + Math.random() * 4.5
-    alphas[idx] = 0.5 + Math.random() * 0.4
+    sizes[idx] = 1.5 + Math.random() * 3.0
+    alphas[idx] = 0.5 + Math.random() * 0.5
     phases[idx] = Math.random() * Math.PI * 2
   }
 

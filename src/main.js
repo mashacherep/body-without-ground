@@ -12,6 +12,9 @@ import { runIntro } from './narrative/intro.js'
 import { findClickedCell } from './interaction/raycast.js'
 import { showReadingPanel, hideReadingPanel, isReadingPanelVisible } from './reading/panel.js'
 import { stopActiveViz } from './reading/viz.js'
+import { startAlertChecking, onAlertChange, isAlertActive } from './signals/alerts.js'
+import { holdBreath, releaseBreath } from './cosmos/breathing.js'
+import { showText } from './narrative/overlay.js'
 
 // Scene
 const scene = new THREE.Scene()
@@ -38,6 +41,31 @@ initFilaments(scene)
 
 // Run intro — seeds cosmos gradually during the text beats
 runIntro(camera)
+
+// Air raid alerts — cosmos responds to real alerts in Kyiv
+startAlertChecking()
+let raidActive = false
+
+onAlertChange((active) => {
+  raidActive = active
+  if (active) {
+    holdBreath()
+    showText('air raid alert — kyiv.', {
+      subtitle: 'the garden dims. the machine keeps running. it does not know.',
+      fadeIn: 1500,
+      hold: 8000,
+      fadeOut: 2000,
+    })
+  } else {
+    releaseBreath()
+    showText('all clear. kyiv.', {
+      subtitle: 'the city exhales. the garden brightens. the machine noticed nothing.',
+      fadeIn: 1200,
+      hold: 5000,
+      fadeOut: 1500,
+    })
+  }
+})
 
 // Double-click to enter reading view — single click = navigate freely
 renderer.domElement.addEventListener('dblclick', (e) => {
