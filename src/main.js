@@ -24,8 +24,8 @@ import { initSound, startDrone, fadeDrone, silenceDrone, restoreDrone, updateDro
 
 // Scene
 const scene = new THREE.Scene()
-scene.background = new THREE.Color(0x050508)
-scene.fog = new THREE.FogExp2(0x050508, 0.002)
+scene.background = new THREE.Color(0x040610)
+scene.fog = new THREE.FogExp2(0x040610, 0.002)
 
 // Camera
 const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 5000)
@@ -88,7 +88,7 @@ onAlertChange((active) => {
     // Show badge
     if (alertBadge) alertBadge.classList.add('active')
     // Dim the scene
-    scene.fog = new THREE.FogExp2(0x050508, 0.006) // heavier fog
+    scene.fog = new THREE.FogExp2(0x040610, 0.006) // heavier fog
     // Narrative
     const raidTexts = [
       { text: 'air raid alert — kyiv.', subtitle: 'the garden dims. the machine keeps running. it does not know.' },
@@ -101,7 +101,7 @@ onAlertChange((active) => {
     releaseBreath()
     restoreDrone()
     if (alertBadge) alertBadge.classList.remove('active')
-    scene.fog = new THREE.FogExp2(0x050508, 0.002) // restore normal fog
+    scene.fog = new THREE.FogExp2(0x040610, 0.002) // restore normal fog
     showText('all clear. kyiv.', {
       subtitle: 'the city exhales. the garden brightens. the machine noticed nothing.',
       fadeIn: 1200, hold: 6000, fadeOut: 1500,

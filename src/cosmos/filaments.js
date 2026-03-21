@@ -44,10 +44,16 @@ export function updateFilaments(time) {
         const sameType = a.type === b.type
         const basePulse = 0.5 + 0.5 * Math.sin(time * 1.5 + i * 0.7 + j * 1.3)
         const flowPulse = 0.5 + 0.5 * Math.sin(time * 3 + i * 2.1 + j * 0.9)
-        const baseAlpha = (1 - dist / maxDist) * (sameType ? 0.25 + basePulse * 0.2 : 0.05 + basePulse * 0.05)
+        const baseAlpha = (1 - dist / maxDist) * (sameType ? 0.3 + basePulse * 0.2 : 0.05 + basePulse * 0.05)
         const alpha = baseAlpha
         const alphaEnd = baseAlpha * (0.3 + flowPulse * 0.7)
-        const color = sameType ? CELL_TYPES[a.type].color : [0.6, 0.6, 0.55]
+        const colorA = CELL_TYPES[a.type].color
+        const colorB = CELL_TYPES[b.type].color
+        const color = sameType ? colorA : [
+          (colorA[0] + colorB[0]) * 0.5,
+          (colorA[1] + colorB[1]) * 0.5,
+          (colorA[2] + colorB[2]) * 0.5,
+        ]
 
         const base = connIdx * 6
         linePositions[base]     = a.position[0]
@@ -88,7 +94,13 @@ export function updateFilaments(time) {
       const b = cells[nearest[k].idx]
       const dist = nearest[k].dist
       const alpha = Math.max(0.03, (1 - dist / 200) * 0.12)
-      const color = a.type === b.type ? CELL_TYPES[a.type].color : [0.5, 0.5, 0.45]
+      const colorA = CELL_TYPES[a.type].color
+      const colorB = CELL_TYPES[b.type].color
+      const color = a.type === b.type ? colorA : [
+        (colorA[0] + colorB[0]) * 0.5,
+        (colorA[1] + colorB[1]) * 0.5,
+        (colorA[2] + colorB[2]) * 0.5,
+      ]
 
       const base = connIdx * 6
       linePositions[base]     = a.position[0]
