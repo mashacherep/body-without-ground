@@ -12,8 +12,8 @@ import { setAutopilotSpeed, getBaseSpeed } from '../camera/autopilot.js'
  * so it's seamless with the render loop.
  */
 let pullbackActive = false
-let pullbackStart = [0, 2, 8]
-let pullbackEnd = [0, 50, 160]
+let pullbackStart = [0, 30, 120]
+let pullbackEnd = [0, 80, 250]
 let pullbackProgress = 0
 let pullbackDuration = 30000 // 30 seconds — the full intro length
 let pullbackCamera = null
@@ -54,8 +54,8 @@ function stopPullback() {
 export async function runIntro(camera) {
   lockAutopilot()
 
-  // Start camera very close, in darkness
-  camera.position.set(0, 2, 8)
+  // Start camera where it can see the first nodes spawning
+  camera.position.set(0, 30, 120)
   camera.lookAt(0, 0, 0)
 
   // Begin continuous pull-back

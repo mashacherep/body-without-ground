@@ -16,7 +16,7 @@ scene.background = new THREE.Color(0x050508)
 
 // Camera
 const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 5000)
-camera.position.set(0, 2, 8) // Start close for intro
+camera.position.set(0, 30, 120) // Start where intro begins
 
 // Renderer
 const renderer = new THREE.WebGLRenderer({ antialias: true })
