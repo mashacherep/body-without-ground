@@ -54,7 +54,7 @@ function stopPullback() {
 export async function runIntro(camera) {
   lockAutopilot()
 
-  // Start camera where it can see the first nodes spawning
+  // Start camera where it can see the cosmos forming
   camera.position.set(0, 30, 120)
   camera.lookAt(0, 0, 0)
 
@@ -63,12 +63,27 @@ export async function runIntro(camera) {
 
   setAutopilotSpeed(getBaseSpeed() * 0.3)
 
-  // ---- Beat 1: "the machine forgets." ----
+  // Seed a big initial wave IMMEDIATELY — cosmos is already alive when first text appears
   const aboutCell = createCell('about', '"body without ground" is a living generative art installation.', {
     position: [0, 0, 0],
     meta: 'about',
   })
   triggerBirth(aboutCell)
+
+  const immediateTypes = ['poem', 'poem', 'essay', 'music', 'music', 'conway', 'conway',
+    'ukraine', 'ukraine', 'attention', 'embedding', 'network', 'wavefunction',
+    'gradient', 'apoptosis', 'orbit', 'hypergraph', 'tokenprob']
+  for (const type of immediateTypes) {
+    const cell = createCell(type)
+    addCellParticles(cell)
+  }
+
+  // ---- Beat 1: "the machine forgets." ----
+  // More nodes bloom during the text
+  for (let i = 0; i < 4; i++) {
+    const cell = createCell(['poem', 'essay', 'ascii', 'music'][i])
+    triggerBirth(cell)
+  }
 
   await showText('the machine forgets.', {
     fadeIn: 1200,
@@ -77,8 +92,7 @@ export async function runIntro(camera) {
   })
 
   // ---- Beat 2: "you carry it." ----
-  // First wave of nodes appear
-  const earlyTypes = ['poem', 'poem', 'essay', 'music', 'music']
+  const earlyTypes = ['reactiondiffusion', 'lsystem', 'seismic', 'voronoi', 'codeself']
   for (const type of earlyTypes) {
     const cell = createCell(type)
     triggerBirth(cell)
