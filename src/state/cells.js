@@ -38,15 +38,20 @@ export function getAliveCells() { return cells.filter(c => c.alive) }
 function randomPosition(type) {
   const types = Object.keys(CELL_TYPES)
   const idx = types.indexOf(type)
-  const angle = (idx / types.length) * Math.PI * 2
-  // Vary radius more — clusters at different distances
-  const baseRadius = 50 + (idx % 5) * 20
-  const radius = baseRadius + Math.random() * 40
-  const spread = 25
+
+  // Each type has a loose "home" direction but nodes scatter widely
+  // This creates organic clustering without a rigid ring
+  const homeAngle = (idx / types.length) * Math.PI * 2
+  const homeRadius = 40 + (idx % 4) * 15
+
+  // Scatter significantly from home — nodes overlap between types
+  const angle = homeAngle + (Math.random() - 0.5) * 1.8 // wide angular spread
+  const radius = homeRadius * (0.3 + Math.random() * 1.2) // 30% to 150% of home radius
+  const verticalSpread = 60 // tall, not flat
 
   return [
-    Math.cos(angle + (Math.random() - 0.5) * 0.4) * radius + (Math.random() - 0.5) * spread,
-    (Math.random() - 0.5) * spread * 2.0,  // more vertical spread
-    Math.sin(angle + (Math.random() - 0.5) * 0.4) * radius + (Math.random() - 0.5) * spread,
+    Math.cos(angle) * radius + (Math.random() - 0.5) * 40,
+    (Math.random() - 0.5) * verticalSpread, // full 3D volume
+    Math.sin(angle) * radius + (Math.random() - 0.5) * 40,
   ]
 }

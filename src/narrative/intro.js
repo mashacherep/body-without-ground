@@ -159,18 +159,18 @@ export async function runIntro(camera) {
     'activation', 'loss', 'orbit', 'hypergraph', 'neuralpass',
   ])
 
-  // Missing types get 3 each
+  // Missing types get 4 each
   for (const type of TYPE_NAMES) {
     if (seededTypes.has(type)) continue
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 4; i++) {
       const cell = createCell(type)
       addCellParticles(cell)
     }
   }
-  // Already-seeded types get 2 more each for density
+  // Already-seeded types get 3 more each for density
   for (const type of seededTypes) {
     if (type === 'about') continue
-    for (let i = 0; i < 2; i++) {
+    for (let i = 0; i < 3; i++) {
       const cell = createCell(type)
       addCellParticles(cell)
     }

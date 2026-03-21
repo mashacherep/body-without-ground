@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import { getAliveCells } from '../state/cells.js'
 import { CELL_TYPES } from '../generation/types.js'
 
-const MAX_CONNECTIONS = 500
+const MAX_CONNECTIONS = 800
 let lineSegments = null
 let linePositions, lineColors
 
@@ -28,12 +28,12 @@ export function initFilaments(scene) {
 export function updateFilaments(time) {
   const cells = getAliveCells()
   let connIdx = 0
-  const maxDist = 40
-  const maxCheck = Math.min(cells.length, 80)
+  const maxDist = 60
+  const maxCheck = Math.min(cells.length, 100)
 
   for (let i = 0; i < maxCheck && connIdx < MAX_CONNECTIONS; i++) {
     const a = cells[i]
-    for (let j = i + 1; j < Math.min(i + 12, maxCheck) && connIdx < MAX_CONNECTIONS; j++) {
+    for (let j = i + 1; j < Math.min(i + 20, maxCheck) && connIdx < MAX_CONNECTIONS; j++) {
       const b = cells[j]
       const dx = a.position[0] - b.position[0]
       const dy = a.position[1] - b.position[1]
