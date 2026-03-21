@@ -4,6 +4,7 @@ import { createCell, getCells } from './state/cells.js'
 import { initParticles, addCellParticles, updateParticles } from './cosmos/particles.js'
 import { initAttractors, updateAttractors } from './cosmos/attractors.js'
 import { initFilaments, updateFilaments } from './cosmos/filaments.js'
+import { updateBreathing } from './cosmos/breathing.js'
 import { TYPE_NAMES } from './generation/types.js'
 
 // Scene
@@ -59,13 +60,12 @@ const clock = new THREE.Clock()
 
 function animate() {
   requestAnimationFrame(animate)
+  const dt = clock.getDelta()
   const elapsed = clock.getElapsedTime()
-
-  // Breathing: 4-second cycle
-  const breathPhase = elapsed * (Math.PI * 2 / 4)
+  const breathPhase = updateBreathing(dt, 0, 1)
 
   updateParticles(elapsed, breathPhase)
-  updateAttractors(0, 1) // placeholder CPU pressure=0, battery=1 until signals module
+  updateAttractors(0, 1)
   updateFilaments()
   controls.update()
   renderer.render(scene, camera)
