@@ -91,7 +91,7 @@ export async function runIntro(camera) {
     fadeOut: 800,
   })
 
-  // ---- Beat 2: "you carry it." ----
+  // ---- Beat 2 ----
   const earlyTypes = ['reactiondiffusion', 'lsystem', 'seismic', 'voronoi', 'codeself']
   for (const type of earlyTypes) {
     const cell = createCell(type)
@@ -106,45 +106,48 @@ export async function runIntro(camera) {
 
   await sleep(300)
 
-  // ---- Beat 3: "built from kyiv. running in new york." ----
+  // ---- Beat 3 ----
   for (let i = 0; i < 4; i++) {
     const cell = createCell('ukraine')
     triggerBirth(cell)
   }
 
-  await showText('built from kyiv. running in new york.', {
+  await showText('it breathes.', {
+    subtitle: 'cpu pressure shapes chaos. battery voltage sets the mood. frame timing is its pulse.',
     fadeIn: 1000,
-    hold: 2500,
+    hold: 3000,
     fadeOut: 800,
   })
 
   await sleep(200)
 
-  // ---- Beat 4: "this machine uses its own body to create." ----
+  // ---- Beat 4 ----
   const midTypes = ['conway', 'conway', 'attention', 'gradient', 'tokenprob', 'wavefunction', 'activation', 'loss']
   for (const type of midTypes) {
     const cell = createCell(type)
     triggerBirth(cell)
   }
 
-  await showText('this machine uses its own body to create.', {
+  await showText('60 billion of your cells die today.', {
+    subtitle: 'you persist. the machine has no body to maintain.',
     fadeIn: 1000,
-    hold: 2500,
+    hold: 3000,
     fadeOut: 800,
   })
 
   await sleep(200)
 
-  // ---- Beat 5: "every five minutes something new grows." ----
+  // ---- Beat 5 ----
   const birthTypes = ['embedding', 'reactiondiffusion', 'apoptosis', 'network', 'lsystem', 'orbit', 'hypergraph', 'neuralpass']
   for (const type of birthTypes) {
     const cell = createCell(type)
     triggerBirth(cell)
   }
 
-  await showText('every five minutes something new grows.', {
+  await showText('kyiv 3am. new york 8pm.', {
+    subtitle: 'the model lives in neither city.',
     fadeIn: 1000,
-    hold: 2500,
+    hold: 2800,
     fadeOut: 800,
   })
 
