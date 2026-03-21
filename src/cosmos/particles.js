@@ -158,18 +158,17 @@ export function addCellParticles(cell, opts = {}) {
     colors[idx * 3 + 1] = Math.max(0, Math.min(1, typeDef.color[1] * mute + colorShift * 0.5))
     colors[idx * 3 + 2] = Math.max(0, Math.min(1, typeDef.color[2] * mute - colorShift * 0.3))
 
-    // Size variation — wide range, mostly small
+    // Size: mostly tiny points, a few slightly larger
     const sizeRoll = Math.random()
-    if (sizeRoll > 0.97) {
-      sizes[idx] = 3.5 + Math.random() * 3.0 // rare large
-    } else if (sizeRoll > 0.75) {
-      sizes[idx] = 1.5 + Math.random() * 2.0 // medium
+    if (sizeRoll > 0.98) {
+      sizes[idx] = 2.5 + Math.random() * 2.0 // rare bright stars
+    } else if (sizeRoll > 0.8) {
+      sizes[idx] = 1.2 + Math.random() * 1.3 // medium
     } else {
-      sizes[idx] = 0.4 + Math.random() * 1.2 // many tiny
+      sizes[idx] = 0.3 + Math.random() * 0.9 // many tiny points
     }
 
-    // Lower alpha range — subtler, not glowing neon
-    alphas[idx] = 0.25 + Math.random() * 0.45
+    alphas[idx] = 0.3 + Math.random() * 0.5
     phases[idx] = Math.random() * Math.PI * 2
   }
 
