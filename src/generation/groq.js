@@ -26,7 +26,9 @@ export function isApiType(type) {
 }
 
 export function hasGroqKey() {
-  return GROQ_KEY.length > 10
+  const has = GROQ_KEY.length > 10
+  if (!has) console.warn('[groq] No API key found — using seed content')
+  return has
 }
 
 export function getLastLogprobs() {
