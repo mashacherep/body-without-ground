@@ -33,8 +33,8 @@ export function initCarriers(scene) {
   mesh = new THREE.LineSegments(geometry, material)
   scene.add(mesh)
 
-  // Seed a few initial carriers
-  for (let i = 0; i < 12; i++) {
+  // Seed initial carriers — visible from the start
+  for (let i = 0; i < 25; i++) {
     spawnCarrier(
       [(Math.random() - 0.5) * 80, (Math.random() - 0.5) * 40, (Math.random() - 0.5) * 80],
       [0.5 + Math.random() * 0.3, 0.5 + Math.random() * 0.3, 0.6 + Math.random() * 0.3],
@@ -52,17 +52,17 @@ export function spawnCarrier(position, color, word) {
   // Random direction with slight bias upward
   const theta = Math.random() * Math.PI * 2
   const phi = Math.acos(2 * Math.random() - 1)
-  const speed = 0.15 + Math.random() * 0.2
+  const speed = 0.04 + Math.random() * 0.06 // MUCH slower — graceful drift
 
   carriers.push({
     x: position[0], y: position[1], z: position[2],
     vx: Math.sin(phi) * Math.cos(theta) * speed,
-    vy: Math.sin(phi) * Math.sin(theta) * speed * 0.5 + 0.02, // slight upward drift
+    vy: Math.sin(phi) * Math.sin(theta) * speed * 0.5 + 0.008,
     vz: Math.cos(phi) * speed,
     color: [...color],
     word: word || '',
     age: 0,
-    maxAge: 800 + Math.random() * 600, // frames alive
+    maxAge: 2000 + Math.random() * 1500, // live much longer — slow travelers
     absorbed: false,
   })
 }
@@ -75,7 +75,7 @@ export function spawnFromDeath(cell) {
   if (!typeDef) return
   const words = (cell.content || cell.type).split(/\s+/).filter(w => w.length > 2)
 
-  for (let i = 0; i < Math.min(3, MAX_CARRIERS - carriers.length); i++) {
+  for (let i = 0; i < Math.min(5, MAX_CARRIERS - carriers.length); i++) {
     const word = words[i] || cell.type
     spawnCarrier(
       cell.position,
@@ -132,9 +132,10 @@ export function updateCarriers(time) {
   let idx = 0
   for (let i = 0; i < carriers.length && idx < MAX_CARRIERS; i++) {
     const c = carriers[i]
-    const fade = Math.min(1, c.age / 30) * Math.max(0, 1 - c.age / c.maxAge)
-    const trailLen = 2.5
-    const trailLen2 = 5
+    const fade = Math.min(1, c.age / 50) * Math.max(0, 1 - c.age / c.maxAge)
+    const trailLen = 6     // bright head segment — MUCH longer
+    const trailLen2 = 14   // mid trail
+    // total trail length ~21 units — very visible
 
     // Direction vector (normalized velocity)
     const speed = Math.sqrt(c.vx * c.vx + c.vy * c.vy + c.vz * c.vz) || 0.01
@@ -170,12 +171,12 @@ export function updateCarriers(time) {
     carrierPositions[base + 17] = c.z - dz * trailLen2 * 1.5
 
     // Colors: bright head fading to nothing
-    const alpha = fade * 0.6
+    const alpha = fade * 0.9 // MUCH brighter
 
-    // Head: bright, slightly white
-    carrierColors[cBase] = Math.min(1, c.color[0] * 1.3)
-    carrierColors[cBase + 1] = Math.min(1, c.color[1] * 1.3)
-    carrierColors[cBase + 2] = Math.min(1, c.color[2] * 1.3)
+    // Head: bright, warm
+    carrierColors[cBase] = Math.min(1, c.color[0] * 1.5)
+    carrierColors[cBase + 1] = Math.min(1, c.color[1] * 1.5)
+    carrierColors[cBase + 2] = Math.min(1, c.color[2] * 1.5)
     carrierColors[cBase + 3] = alpha
 
     carrierColors[cBase + 4] = c.color[0]

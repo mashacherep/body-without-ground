@@ -27,7 +27,7 @@ export function initAttractors(scene) {
 
   for (let i = 0; i < LORENZ_TRAIL; i++) {
     stepLorenz()
-    const scale = 1.2
+    const scale = 1.8
     lorenzPositions[i * 3]     = lorenz.x * scale
     lorenzPositions[i * 3 + 1] = lorenz.z * scale - 30
     lorenzPositions[i * 3 + 2] = lorenz.y * scale
@@ -36,9 +36,9 @@ export function initAttractors(scene) {
   lorenzLine = new THREE.Line(
     lorenzGeo,
     new THREE.LineBasicMaterial({
-      color: 0x4a80c0,
+      color: 0x6a9ee0,
       transparent: true,
-      opacity: 0.5,
+      opacity: 0.65,
       linewidth: 2,
       blending: THREE.AdditiveBlending,
     })
@@ -61,9 +61,9 @@ export function initAttractors(scene) {
   rosslerLine = new THREE.Line(
     rosslerGeo,
     new THREE.LineBasicMaterial({
-      color: 0xc89650,
+      color: 0xe0b060,
       transparent: true,
-      opacity: 0.45,
+      opacity: 0.55,
       blending: THREE.AdditiveBlending,
     })
   )
