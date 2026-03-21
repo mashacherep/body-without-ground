@@ -1,7 +1,4 @@
 import * as THREE from 'three'
-import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js'
-import { RenderPass } from 'three/addons/postprocessing/RenderPass.js'
-import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { getCells, getAliveCells, killCell } from './state/cells.js'
 import { initParticles, updateParticles, getBuffers, getCellParticleMap } from './cosmos/particles.js'
 import { triggerBirth, updateBirths } from './cosmos/birth.js'
@@ -40,16 +37,6 @@ renderer.setSize(innerWidth, innerHeight)
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2))
 document.body.appendChild(renderer.domElement)
 
-// Post-processing: bloom
-const composer = new EffectComposer(renderer)
-composer.addPass(new RenderPass(scene, camera))
-const bloomPass = new UnrealBloomPass(
-  new THREE.Vector2(innerWidth, innerHeight),
-  0.4,    // strength — subtle
-  0.3,    // radius — tight glow
-  0.92    // threshold — only the brightest things bloom
-)
-composer.addPass(bloomPass)
 
 // Camera system (replaces raw OrbitControls)
 initCameraSystem(camera, renderer.domElement)
@@ -184,7 +171,7 @@ function animate() {
   // Whisper panel — show text from nearby cells
   updateWhisper(camera)
 
-  composer.render()
+  renderer.render(scene, camera)
 }
 animate()
 
@@ -193,7 +180,6 @@ window.addEventListener('resize', () => {
   camera.aspect = innerWidth / innerHeight
   camera.updateProjectionMatrix()
   renderer.setSize(innerWidth, innerHeight)
-  composer.setSize(innerWidth, innerHeight)
 })
 
 // Prevent WebGL context loss on focus change (Cmd+4 screenshot, tab switch)
