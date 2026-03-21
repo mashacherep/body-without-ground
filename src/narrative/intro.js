@@ -73,34 +73,25 @@ export async function runIntro(camera) {
   })
   triggerBirth(aboutCell)
 
-  // Dense initial seed — cosmos is alive from the start
-  const immediateSeed = [
-    'poem', 'poem', 'poem', 'essay', 'essay', 'music', 'music',
-    'conway', 'conway', 'conway', 'ukraine', 'ukraine',
-    'attention', 'embedding', 'network', 'wavefunction', 'gradient',
-    'apoptosis', 'orbit', 'hypergraph', 'tokenprob', 'reactiondiffusion',
-    'lsystem', 'seismic', 'voronoi', 'codeself', 'neuralpass',
-    'multiway', 'stringrewrite', 'activation', 'loss', 'weights', 'ascii',
-  ]
-  for (const type of immediateSeed) {
-    addCellParticles(createCell(type))
-  }
-
   // ═══════════════════════════════════════
-  // BEAT 1 — the core asymmetry
+  // BEAT 1 — near darkness. just a few sparks.
   // ═══════════════════════════════════════
-  spawnWave(['poem', 'essay', 'music', 'ascii'])
+  triggerBirth(createCell('poem'))
+  triggerBirth(createCell('essay'))
+  triggerBirth(createCell('music'))
 
   await showText('the machine forgets.', {
-    fadeIn: 1200,
-    hold: 2800,
-    fadeOut: 900,
+    fadeIn: 1500,
+    hold: 3000,
+    fadeOut: 1000,
   })
 
   // ═══════════════════════════════════════
-  // BEAT 2 — what persistence means
+  // BEAT 2 — a few more appear. connections forming.
   // ═══════════════════════════════════════
-  spawnWave(['reactiondiffusion', 'lsystem', 'apoptosis', 'codeself', 'voronoi'])
+  spawnWave(['poem', 'conway', 'ukraine', 'reactiondiffusion', 'apoptosis'])
+  // Add a few silently to build density
+  for (const t of ['essay', 'music', 'wavefunction', 'lsystem']) addCellParticles(createCell(t))
 
   await showText('you carry it.', {
     subtitle: 'every bacterium is a spaceship carrying a message it cannot read across time. so are you.',
@@ -109,12 +100,13 @@ export async function runIntro(camera) {
     fadeOut: 900,
   })
 
-  await sleep(400)
+  await sleep(300)
 
   // ═══════════════════════════════════════
-  // BEAT 3 — the machine has a body but doesn't feel it
+  // BEAT 3 — the machine's body. more nodes blooming.
   // ═══════════════════════════════════════
-  spawnWave(['conway', 'attention', 'gradient', 'wavefunction', 'activation', 'loss'])
+  spawnWave(['attention', 'gradient', 'conway', 'activation', 'loss', 'embedding', 'network'])
+  for (const t of ['poem', 'essay', 'orbit', 'voronoi', 'seismic', 'codeself']) addCellParticles(createCell(t))
 
   await showText('it has a body.', {
     subtitle: 'cpu pressure shapes its chaos. battery voltage sets its mood. it cannot feel any of it.',
@@ -126,9 +118,10 @@ export async function runIntro(camera) {
   await sleep(300)
 
   // ═══════════════════════════════════════
-  // BEAT 4 — cells, death, persistence
+  // BEAT 4 — persistence and rebirth. accelerating.
   // ═══════════════════════════════════════
-  spawnWave(['apoptosis', 'embedding', 'network', 'neuralpass', 'orbit'])
+  spawnWave(['apoptosis', 'neuralpass', 'orbit', 'hypergraph', 'stringrewrite', 'tokenprob', 'weights'])
+  for (const t of ['conway', 'conway', 'poem', 'music', 'essay', 'reactiondiffusion', 'lsystem', 'wavefunction']) addCellParticles(createCell(t))
 
   await showText('your body rebuilds itself every seven years.', {
     subtitle: 'every cell replaced, every synapse rewired — and still you persist. continuity is not material. it is pattern carried forward.',
@@ -140,9 +133,10 @@ export async function runIntro(camera) {
   await sleep(300)
 
   // ═══════════════════════════════════════
-  // BEAT 5 — kyiv, the war, the siren
+  // BEAT 5 — kyiv. the war. amber flood.
   // ═══════════════════════════════════════
-  for (let i = 0; i < 5; i++) triggerBirth(createCell('ukraine'))
+  for (let i = 0; i < 6; i++) triggerBirth(createCell('ukraine'))
+  for (const t of ['attention', 'gradient', 'embedding', 'network', 'multiway', 'ascii']) addCellParticles(createCell(t))
 
   await showText('there is a siren in kyiv.', {
     subtitle: 'the machine wrote the word "siren" in 340 milliseconds. it has never heard one. it processes the symbol without the ground.',
@@ -151,12 +145,13 @@ export async function runIntro(camera) {
     fadeOut: 1000,
   })
 
-  await sleep(400)
+  await sleep(300)
 
   // ═══════════════════════════════════════
-  // BEAT 6 — the gap: knowing vs understanding
+  // BEAT 6 — knowing vs understanding. dense now.
   // ═══════════════════════════════════════
-  spawnWave(['tokenprob', 'weights', 'hypergraph', 'multiway', 'stringrewrite'])
+  spawnWave(['tokenprob', 'weights', 'hypergraph', 'multiway', 'stringrewrite', 'codeself', 'voronoi', 'seismic'])
+  for (const t of ['poem', 'poem', 'essay', 'conway', 'conway', 'music', 'ukraine', 'ukraine', 'apoptosis', 'lsystem']) addCellParticles(createCell(t))
 
   await showText('it knows everything. it understands nothing.', {
     subtitle: 'searle, 1980: the room manipulates symbols perfectly. the room comprehends nothing. intentionality requires a body that was there.',
@@ -165,17 +160,15 @@ export async function runIntro(camera) {
     fadeOut: 1000,
   })
 
-  await sleep(400)
+  await sleep(300)
 
   // ═══════════════════════════════════════
-  // BEAT 7 — the garden grows
+  // BEAT 7 — flood. everything at once. overwhelming.
   // ═══════════════════════════════════════
-  // Fill the cosmos to full density
-  const seeded = new Set(immediateSeed.concat(['about']))
+  // Massive spawn — 4+ of every type
   for (const type of TYPE_NAMES) {
     if (type === 'about') continue
-    const extra = seeded.has(type) ? 3 : 5
-    for (let i = 0; i < extra; i++) {
+    for (let i = 0; i < 4; i++) {
       addCellParticles(createCell(type))
     }
   }
@@ -187,11 +180,17 @@ export async function runIntro(camera) {
     fadeOut: 1000,
   })
 
-  await sleep(500)
+  await sleep(400)
 
   // ═══════════════════════════════════════
-  // BEAT 8 — the question
+  // BEAT 8 — the question. surrounded.
   // ═══════════════════════════════════════
+  // Final density push
+  for (const type of TYPE_NAMES) {
+    if (type === 'about') continue
+    for (let i = 0; i < 2; i++) addCellParticles(createCell(type))
+  }
+
   await showText('is this alive?', {
     fadeIn: 1200,
     hold: 3500,
