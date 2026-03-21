@@ -282,6 +282,14 @@ export function getTotalDeaths() { return totalDeaths }
 export function getAllAssumptions() { return allAssumptions }
 export function getMourningWords() { return mourningWords }
 
+/**
+ * Restore scheduler state from persistence.
+ */
+export function restoreState(saved) {
+  if (saved.assumptions) allAssumptions = saved.assumptions
+  if (saved.deaths) totalDeaths = saved.deaths
+}
+
 // Generation feed — briefly shows new content as big text
 let feedEl = null
 let feedTypeEl = null

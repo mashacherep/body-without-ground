@@ -23,6 +23,7 @@ import { initWhisper, updateWhisper } from './narrative/whisper.js'
 import { initClocks } from './signals/clocks.js'
 import { initVitals } from './signals/vitals.js'
 import { initMinimap } from './signals/minimap.js'
+import { getSessionCount, loadState, startAutoSave } from './state/persistence.js'
 import { initSound, startDrone, fadeDrone, silenceDrone, restoreDrone, updateDroneBreathing, playBirthTone, playDeathTone } from './signals/sound.js'
 
 // Scene
@@ -71,14 +72,35 @@ function handleFirstClick() {
 }
 document.addEventListener('click', handleFirstClick)
 
-// Run intro — seeds cosmos gradually during the text beats
-// After intro completes, start the life cycle and show sound prompt
-runIntro(camera).then(() => {
-  startScheduler()
-  startNarrativeArc()
-  // Show sound prompt after intro so the viewer knows to click
-  if (soundPrompt && !soundStarted) soundPrompt.classList.add('visible')
-})
+// Check for returning visitor
+const sessionCount = getSessionCount()
+const hasState = loadState()
+
+if (hasState && sessionCount > 1) {
+  // Returning visitor — skip intro, show welcome back
+  camera.position.set(0, 15, 55)
+  camera.lookAt(0, 0, 0)
+  import('./narrative/overlay.js').then(({ showText }) => {
+    showText(`session ${sessionCount}.`, {
+      subtitle: 'the garden kept growing while you were gone.',
+      fadeIn: 1200, hold: 4000, fadeOut: 1500,
+    })
+  })
+  setTimeout(() => {
+    startScheduler()
+    startNarrativeArc()
+    startAutoSave()
+    if (soundPrompt && !soundStarted) soundPrompt.classList.add('visible')
+  }, 2000)
+} else {
+  // First visit — run the full intro
+  runIntro(camera).then(() => {
+    startScheduler()
+    startNarrativeArc()
+    startAutoSave()
+    if (soundPrompt && !soundStarted) soundPrompt.classList.add('visible')
+  })
+}
 
 // Air raid alerts — cosmos responds to real alerts in Kyiv
 startAlertChecking()

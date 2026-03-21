@@ -59,3 +59,10 @@ export function getCorpusSize() {
 export function getCorpus() {
   return worldWords
 }
+
+/**
+ * Restore corpus from saved state.
+ */
+export function setCorpus(words) {
+  worldWords = words
+}
