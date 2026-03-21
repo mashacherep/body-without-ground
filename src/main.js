@@ -39,28 +39,9 @@ initFilaments(scene)
 // Run intro — seeds cosmos gradually during the text beats
 runIntro(camera)
 
-// Click to enter reading view — but NOT on drag
-let pointerDownPos = null
-let pointerDownTime = 0
-
-renderer.domElement.addEventListener('pointerdown', (e) => {
-  pointerDownPos = { x: e.clientX, y: e.clientY }
-  pointerDownTime = performance.now()
-})
-
-renderer.domElement.addEventListener('pointerup', (e) => {
-  if (!pointerDownPos) return
+// Double-click to enter reading view — single click = navigate freely
+renderer.domElement.addEventListener('dblclick', (e) => {
   if (isReadingPanelVisible()) return
-
-  // Only count as a click if: moved < 5px AND held < 300ms
-  const dx = e.clientX - pointerDownPos.x
-  const dy = e.clientY - pointerDownPos.y
-  const dist = Math.sqrt(dx * dx + dy * dy)
-  const duration = performance.now() - pointerDownTime
-
-  pointerDownPos = null
-
-  if (dist > 5 || duration > 300) return // was a drag, not a click
 
   const cell = findClickedCell(e, camera, renderer.domElement)
   if (cell) {
