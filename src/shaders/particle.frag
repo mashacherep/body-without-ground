@@ -6,15 +6,15 @@ void main() {
   float dist = length(gl_PointCoord - vec2(0.5));
   if (dist > 0.5) discard;
 
-  // Clean smooth falloff — like a real point of light
-  float glow = exp(-dist * dist * 12.0);
+  // Sharp center, soft edge — not blurry
+  float glow = 1.0 - smoothstep(0.0, 0.35, dist);
+  glow *= glow; // sharpen
 
-  // Very subtle color warmth toward center
-  vec3 col = mix(vColor, vColor * 1.1, glow * 0.3);
+  vec3 col = vColor;
 
-  // Gentle desaturation for realism
+  // Slight desaturation
   float luma = dot(col, vec3(0.299, 0.587, 0.114));
-  col = mix(col, vec3(luma), 0.1);
+  col = mix(col, vec3(luma), 0.08);
 
   gl_FragColor = vec4(col, vAlpha * glow);
 }
