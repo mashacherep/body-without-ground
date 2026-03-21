@@ -42,7 +42,7 @@ export function updateFilaments() {
 
       if (dist < maxDist) {
         const sameType = a.type === b.type
-        const alpha = (1 - dist / maxDist) * (sameType ? 0.18 : 0.04)
+        const alpha = (1 - dist / maxDist) * (sameType ? 0.35 : 0.08)
         const color = sameType ? CELL_TYPES[a.type].color : [0.6, 0.6, 0.55]
 
         const base = connIdx * 6

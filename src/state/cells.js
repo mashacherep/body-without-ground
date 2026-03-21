@@ -39,12 +39,14 @@ function randomPosition(type) {
   const types = Object.keys(CELL_TYPES)
   const idx = types.indexOf(type)
   const angle = (idx / types.length) * Math.PI * 2
-  const radius = 80 + Math.random() * 60
-  const spread = 30
+  // Vary radius more — clusters at different distances
+  const baseRadius = 50 + (idx % 5) * 20
+  const radius = baseRadius + Math.random() * 40
+  const spread = 25
 
   return [
-    Math.cos(angle) * radius + (Math.random() - 0.5) * spread,
-    (Math.random() - 0.5) * spread * 1.5,
-    Math.sin(angle) * radius + (Math.random() - 0.5) * spread,
+    Math.cos(angle + (Math.random() - 0.5) * 0.4) * radius + (Math.random() - 0.5) * spread,
+    (Math.random() - 0.5) * spread * 2.0,  // more vertical spread
+    Math.sin(angle + (Math.random() - 0.5) * 0.4) * radius + (Math.random() - 0.5) * spread,
   ]
 }

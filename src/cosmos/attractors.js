@@ -38,7 +38,7 @@ export function initAttractors(scene) {
     new THREE.LineBasicMaterial({
       color: 0x4a80c0,
       transparent: true,
-      opacity: 0.15,
+      opacity: 0.35,
       blending: THREE.AdditiveBlending,
     })
   )
@@ -62,7 +62,7 @@ export function initAttractors(scene) {
     new THREE.LineBasicMaterial({
       color: 0xc89650,
       transparent: true,
-      opacity: 0.12,
+      opacity: 0.28,
       blending: THREE.AdditiveBlending,
     })
   )

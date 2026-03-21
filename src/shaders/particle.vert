@@ -24,8 +24,8 @@ void main() {
   vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
 
   // Size attenuation
-  gl_PointSize = aSize * (300.0 / -mvPosition.z);
-  gl_PointSize = clamp(gl_PointSize, 1.0, 40.0);
+  gl_PointSize = aSize * (600.0 / -mvPosition.z);
+  gl_PointSize = clamp(gl_PointSize, 1.5, 60.0);
 
   gl_Position = projectionMatrix * mvPosition;
 }
