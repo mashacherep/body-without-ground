@@ -12,29 +12,47 @@ import { setAutopilotSpeed, getBaseSpeed } from '../camera/autopilot.js'
  * so it's seamless with the render loop.
  */
 let pullbackActive = false
-let pullbackStart = [0, 30, 120]
-let pullbackEnd = [0, 80, 250]
 let pullbackProgress = 0
-let pullbackDuration = 30000 // 30 seconds — the full intro length
+let pullbackDuration = 28000
 let pullbackCamera = null
+
+// Camera journey: start inside the cosmos, arc upward and outward
+// Each keyframe: [x, y, z] — the camera interpolates through these
+const CAMERA_PATH = [
+  [5, 3, 15],      // start: inside the cluster, intimate
+  [20, 8, 35],     // beat 2: pulling back, seeing nearby nodes
+  [40, 15, 60],    // beat 3: more of the cosmos visible
+  [60, 25, 90],    // beat 4: wide view forming
+  [30, 40, 120],   // beat 5: arc upward, see the whole spread
+  [0, 50, 150],    // final: centered, looking down into the cosmos
+]
 
 function startPullback(camera) {
   pullbackCamera = camera
   pullbackActive = true
   pullbackProgress = 0
-  pullbackStart = [camera.position.x, camera.position.y, camera.position.z]
 
   function tick() {
     if (!pullbackActive) return
     pullbackProgress = Math.min(1, pullbackProgress + 16 / pullbackDuration)
 
-    // Ease out — fast at first, slows at end
-    const t = 1 - Math.pow(1 - pullbackProgress, 2.5)
+    // Ease: slow start, steady middle, slow end
+    const t = pullbackProgress < 0.5
+      ? 2 * pullbackProgress * pullbackProgress
+      : 1 - Math.pow(-2 * pullbackProgress + 2, 2) / 2
+
+    // Interpolate through keyframes
+    const totalSegments = CAMERA_PATH.length - 1
+    const segment = Math.min(Math.floor(t * totalSegments), totalSegments - 1)
+    const segmentT = (t * totalSegments) - segment
+
+    const a = CAMERA_PATH[segment]
+    const b = CAMERA_PATH[segment + 1]
 
     pullbackCamera.position.set(
-      pullbackStart[0] + (pullbackEnd[0] - pullbackStart[0]) * t,
-      pullbackStart[1] + (pullbackEnd[1] - pullbackStart[1]) * t,
-      pullbackStart[2] + (pullbackEnd[2] - pullbackStart[2]) * t,
+      a[0] + (b[0] - a[0]) * segmentT,
+      a[1] + (b[1] - a[1]) * segmentT,
+      a[2] + (b[2] - a[2]) * segmentT,
     )
     pullbackCamera.lookAt(0, 0, 0)
 
@@ -54,8 +72,8 @@ function stopPullback() {
 export async function runIntro(camera) {
   lockAutopilot()
 
-  // Start camera where it can see the cosmos forming
-  camera.position.set(0, 30, 120)
+  // Start camera inside the cosmos — intimate, close to particles
+  camera.position.set(5, 3, 15)
   camera.lookAt(0, 0, 0)
 
   // Begin continuous pull-back
@@ -189,8 +207,8 @@ export async function runIntro(camera) {
   stopPullback()
   clearOverlay()
 
-  // Position camera at a good viewing distance before handing off to autopilot
-  camera.position.set(0, 60, 180)
+  // Position camera facing the cosmos center before handing off to autopilot
+  camera.position.set(0, 50, 150)
   camera.lookAt(0, 0, 0)
 
   setAutopilotSpeed(getBaseSpeed())
