@@ -1,13 +1,14 @@
 import * as THREE from 'three'
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
-import { createCell, getCells, getAliveCells, killCell } from './state/cells.js'
-import { initParticles, addCellParticles, updateParticles, getBuffers, getCellParticleMap } from './cosmos/particles.js'
+import { getCells, getAliveCells, killCell } from './state/cells.js'
+import { initParticles, updateParticles, getBuffers, getCellParticleMap } from './cosmos/particles.js'
 import { triggerBirth, updateBirths } from './cosmos/birth.js'
 import { triggerDeath, updateDeaths } from './cosmos/death.js'
 import { initAttractors, updateAttractors } from './cosmos/attractors.js'
 import { initFilaments, updateFilaments } from './cosmos/filaments.js'
 import { updateBreathing } from './cosmos/breathing.js'
-import { TYPE_NAMES } from './generation/types.js'
+import { initCameraSystem, updateCameraSystem } from './camera/controls.js'
+import { updateReadingView, isInReadingView } from './camera/transitions.js'
+import { runIntro } from './narrative/intro.js'
 
 // Scene
 const scene = new THREE.Scene()
@@ -15,7 +16,7 @@ scene.background = new THREE.Color(0x050508)
 
 // Camera
 const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 5000)
-camera.position.set(0, 80, 200)
+camera.position.set(0, 2, 8) // Start close for intro
 
 // Renderer
 const renderer = new THREE.WebGLRenderer({ antialias: true })
@@ -23,41 +24,18 @@ renderer.setSize(innerWidth, innerHeight)
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2))
 document.body.appendChild(renderer.domElement)
 
-// Controls
-const controls = new OrbitControls(camera, renderer.domElement)
-controls.enableDamping = true
-controls.dampingFactor = 0.05
-controls.maxDistance = 800
-controls.minDistance = 10
+// Camera system (replaces raw OrbitControls)
+initCameraSystem(camera, renderer.domElement)
 
-// Init particles
+// Init cosmos subsystems
 initParticles(scene)
 initAttractors(scene)
 initFilaments(scene)
 
-// Seed cells
-seedCosmos()
+// Run intro — seeds cosmos gradually during the text beats
+runIntro(camera)
 
-function seedCosmos() {
-  // About node at center
-  const aboutCell = createCell('about', '"body without ground" is a living generative art installation.', {
-    position: [0, 0, 0],
-    meta: 'about',
-  })
-  addCellParticles(aboutCell)
-
-  // Create 3 of each type for initial density
-  for (const type of TYPE_NAMES) {
-    if (type === 'about') continue
-    for (let i = 0; i < 3; i++) {
-      const cell = createCell(type)
-      addCellParticles(cell)
-    }
-  }
-  console.log(`Seeded ${getCells().length} cells`)
-}
-
-// Animation
+// Animation loop
 const clock = new THREE.Clock()
 
 function animate() {
@@ -73,7 +51,12 @@ function animate() {
   updateDeaths(bufs.positions, bufs.alphas, bufs.colors, cpm)
   updateAttractors(0, 1)
   updateFilaments()
-  controls.update()
+
+  // Camera: reading view takes priority, then the camera system handles autopilot/viewer
+  if (!updateReadingView(dt, camera)) {
+    updateCameraSystem(dt)
+  }
+
   renderer.render(scene, camera)
 }
 animate()
