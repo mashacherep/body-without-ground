@@ -7,11 +7,49 @@ import { lockAutopilot, unlockControls, interruptDriftTo } from '../camera/contr
 import { setAutopilotSpeed, getBaseSpeed } from '../camera/autopilot.js'
 
 /**
- * Run the intro sequence. Resolves when the intro is complete and the
- * camera begins its normal drift.
- *
- * @param {THREE.PerspectiveCamera} camera — to position for the opening shot
- * @returns {Promise<void>}
+ * Smooth camera pull-back that runs throughout the intro.
+ * Starts very close, ends at a full view. Uses requestAnimationFrame
+ * so it's seamless with the render loop.
+ */
+let pullbackActive = false
+let pullbackStart = [0, 2, 8]
+let pullbackEnd = [0, 50, 160]
+let pullbackProgress = 0
+let pullbackDuration = 30000 // 30 seconds — the full intro length
+let pullbackCamera = null
+
+function startPullback(camera) {
+  pullbackCamera = camera
+  pullbackActive = true
+  pullbackProgress = 0
+  pullbackStart = [camera.position.x, camera.position.y, camera.position.z]
+
+  function tick() {
+    if (!pullbackActive) return
+    pullbackProgress = Math.min(1, pullbackProgress + 16 / pullbackDuration)
+
+    // Ease out — fast at first, slows at end
+    const t = 1 - Math.pow(1 - pullbackProgress, 2.5)
+
+    pullbackCamera.position.set(
+      pullbackStart[0] + (pullbackEnd[0] - pullbackStart[0]) * t,
+      pullbackStart[1] + (pullbackEnd[1] - pullbackStart[1]) * t,
+      pullbackStart[2] + (pullbackEnd[2] - pullbackStart[2]) * t,
+    )
+    pullbackCamera.lookAt(0, 0, 0)
+
+    requestAnimationFrame(tick)
+  }
+  requestAnimationFrame(tick)
+}
+
+function stopPullback() {
+  pullbackActive = false
+}
+
+/**
+ * Run the intro sequence. The camera smoothly pulls back throughout
+ * while nodes bloom in waves timed to text beats.
  */
 export async function runIntro(camera) {
   lockAutopilot()
@@ -20,11 +58,12 @@ export async function runIntro(camera) {
   camera.position.set(0, 2, 8)
   camera.lookAt(0, 0, 0)
 
-  // Slow autopilot speed for the intro pull-back
+  // Begin continuous pull-back
+  startPullback(camera)
+
   setAutopilotSpeed(getBaseSpeed() * 0.3)
 
   // ---- Beat 1: "the machine forgets." ----
-  // First node ignites behind the text
   const aboutCell = createCell('about', '"body without ground" is a living generative art installation.', {
     position: [0, 0, 0],
     meta: 'about',
@@ -37,15 +76,12 @@ export async function runIntro(camera) {
     fadeOut: 800,
   })
 
-  // Pull camera back a bit
-  camera.position.set(0, 10, 30)
-
   // ---- Beat 2: "you carry it." ----
-  // Scatter a few nodes
-  const earlyTypes = ['poem', 'essay', 'music']
+  // First wave of nodes appear
+  const earlyTypes = ['poem', 'poem', 'essay', 'music', 'music']
   for (const type of earlyTypes) {
     const cell = createCell(type)
-    addCellParticles(cell)
+    triggerBirth(cell)
   }
 
   await showText('you carry it.', {
@@ -54,15 +90,13 @@ export async function runIntro(camera) {
     fadeOut: 800,
   })
 
-  await sleep(400)
+  await sleep(300)
 
   // ---- Beat 3: "built from kyiv. running in new york." ----
-  // Ukraine cluster ignites amber
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 4; i++) {
     const cell = createCell('ukraine')
     triggerBirth(cell)
   }
-  interruptDriftTo(getCellPositionByType('ukraine'), 0.3)
 
   await showText('built from kyiv. running in new york.', {
     fadeIn: 1000,
@@ -70,14 +104,10 @@ export async function runIntro(camera) {
     fadeOut: 800,
   })
 
-  // Camera pulls back further
-  camera.position.set(0, 30, 80)
-
-  await sleep(300)
+  await sleep(200)
 
   // ---- Beat 4: "this machine uses its own body to create." ----
-  // More types appear — Lorenz attractor is already running from Phase 1
-  const midTypes = ['conway', 'attention', 'gradient', 'tokenprob', 'wavefunction']
+  const midTypes = ['conway', 'conway', 'attention', 'gradient', 'tokenprob', 'wavefunction', 'activation', 'loss']
   for (const type of midTypes) {
     const cell = createCell(type)
     triggerBirth(cell)
@@ -89,11 +119,10 @@ export async function runIntro(camera) {
     fadeOut: 800,
   })
 
-  await sleep(300)
+  await sleep(200)
 
   // ---- Beat 5: "every five minutes something new grows." ----
-  // A birth happens on cue
-  const birthTypes = ['embedding', 'reactiondiffusion', 'apoptosis', 'network', 'lsystem']
+  const birthTypes = ['embedding', 'reactiondiffusion', 'apoptosis', 'network', 'lsystem', 'orbit', 'hypergraph', 'neuralpass']
   for (const type of birthTypes) {
     const cell = createCell(type)
     triggerBirth(cell)
@@ -105,19 +134,18 @@ export async function runIntro(camera) {
     fadeOut: 800,
   })
 
-  // Camera pulls to full view
-  camera.position.set(0, 60, 150)
-
-  await sleep(400)
+  await sleep(300)
 
   // ---- Beat 6: "is this alive?" ----
-  // Seed remaining types AND add extras of already-seeded types so cosmos is full
+  // Fill the cosmos — all remaining types + extras for density
   const seededTypes = new Set([
     'about', 'poem', 'essay', 'music', 'ukraine',
     'conway', 'attention', 'gradient', 'tokenprob', 'wavefunction',
     'embedding', 'reactiondiffusion', 'apoptosis', 'network', 'lsystem',
+    'activation', 'loss', 'orbit', 'hypergraph', 'neuralpass',
   ])
-  // Fill in missing types (2 each)
+
+  // Missing types get 3 each
   for (const type of TYPE_NAMES) {
     if (seededTypes.has(type)) continue
     for (let i = 0; i < 3; i++) {
@@ -125,7 +153,7 @@ export async function runIntro(camera) {
       addCellParticles(cell)
     }
   }
-  // Add 2 more of each already-seeded type for density
+  // Already-seeded types get 2 more each for density
   for (const type of seededTypes) {
     if (type === 'about') continue
     for (let i = 0; i < 2; i++) {
@@ -141,15 +169,12 @@ export async function runIntro(camera) {
   })
 
   // ---- Intro complete ----
+  stopPullback()
   clearOverlay()
   setAutopilotSpeed(getBaseSpeed())
   unlockControls()
 }
 
-/**
- * Get the average position of alive cells of a given type.
- * Returns [x, y, z].
- */
 function getCellPositionByType(type) {
   const cells = getAliveCells().filter(c => c.type === type)
   if (cells.length === 0) return [0, 0, 0]
