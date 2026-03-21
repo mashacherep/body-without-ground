@@ -15,6 +15,7 @@ import { stopActiveViz } from './reading/viz.js'
 import { startAlertChecking, onAlertChange, isAlertActive } from './signals/alerts.js'
 import { holdBreath, releaseBreath } from './cosmos/breathing.js'
 import { showText } from './narrative/overlay.js'
+import { startLifeCycle } from './generation/lifecycle.js'
 
 // Scene
 const scene = new THREE.Scene()
@@ -40,7 +41,10 @@ initAttractors(scene)
 initFilaments(scene)
 
 // Run intro — seeds cosmos gradually during the text beats
-runIntro(camera)
+// After intro completes, start the life cycle
+runIntro(camera).then(() => {
+  startLifeCycle()
+})
 
 // Air raid alerts — cosmos responds to real alerts in Kyiv
 startAlertChecking()
