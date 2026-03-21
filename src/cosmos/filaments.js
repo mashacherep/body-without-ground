@@ -43,7 +43,10 @@ export function updateFilaments(time) {
       if (dist < maxDist) {
         const sameType = a.type === b.type
         const basePulse = 0.5 + 0.5 * Math.sin(time * 1.5 + i * 0.7 + j * 1.3)
-        const alpha = (1 - dist / maxDist) * (sameType ? 0.25 + basePulse * 0.2 : 0.05 + basePulse * 0.05)
+        const flowPulse = 0.5 + 0.5 * Math.sin(time * 3 + i * 2.1 + j * 0.9)
+        const baseAlpha = (1 - dist / maxDist) * (sameType ? 0.25 + basePulse * 0.2 : 0.05 + basePulse * 0.05)
+        const alpha = baseAlpha
+        const alphaEnd = baseAlpha * (0.3 + flowPulse * 0.7)
         const color = sameType ? CELL_TYPES[a.type].color : [0.6, 0.6, 0.55]
 
         const base = connIdx * 6
@@ -62,7 +65,7 @@ export function updateFilaments(time) {
         lineColors[cBase + 4] = color[0]
         lineColors[cBase + 5] = color[1]
         lineColors[cBase + 6] = color[2]
-        lineColors[cBase + 7] = alpha
+        lineColors[cBase + 7] = alphaEnd
 
         connIdx++
       }

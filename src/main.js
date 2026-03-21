@@ -130,7 +130,7 @@ function animate() {
   updateParticles(elapsed, breathPhase)
   const bufs = getBuffers()
   const cpm = getCellParticleMap()
-  updateBirths(bufs.positions, bufs.alphas, cpm)
+  updateBirths(bufs.positions, bufs.alphas, bufs.sizes, cpm)
   updateDeaths(bufs.positions, bufs.alphas, bufs.colors, cpm)
   updateAttractors(0, 1)
   updateFilaments(elapsed)

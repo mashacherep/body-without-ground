@@ -15,5 +15,8 @@ void main() {
   // Color: core is white-hot, halo is tinted
   vec3 col = mix(vColor, vec3(1.0), core * 0.4);
 
-  gl_FragColor = vec4(col, vAlpha * brightness);
+  // Breathing luminosity — the whole cosmos pulses in brightness
+  float breathGlow = 1.0 + sin(vAlpha * 6.28 + vColor.r * 3.14) * 0.08;
+
+  gl_FragColor = vec4(col * breathGlow, vAlpha * brightness);
 }

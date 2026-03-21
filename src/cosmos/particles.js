@@ -51,7 +51,7 @@ export function initParticles(scene) {
   scene.add(points)
 
   // Ambient dust — fills the void between clusters
-  const DUST_COUNT = 800
+  const DUST_COUNT = 1200
   for (let i = 0; i < DUST_COUNT; i++) {
     const idx = particleCount + i
     if (idx >= MAX_PARTICLES) break
@@ -141,6 +141,21 @@ export function updateParticles(time, breathPhase) {
       positions[i * 3]     += (cx + Math.cos(phase) * orbitR - positions[i * 3]) * 0.01
       positions[i * 3 + 1] += (cy + Math.sin(phase * 1.3) * orbitR - positions[i * 3 + 1]) * 0.01
       positions[i * 3 + 2] += (cz + Math.sin(phase * 0.9) * orbitR - positions[i * 3 + 2]) * 0.01
+    }
+  }
+
+  // Dust current flow — organized streams, not random
+  const dustStart = particleCount - 1200 // approximate dust particle range
+  if (dustStart > 0) {
+    for (let i = Math.max(0, dustStart); i < particleCount; i++) {
+      // Flowing stream pattern based on position
+      const px = positions[i * 3]
+      const pz = positions[i * 3 + 2]
+      const flowAngle = Math.atan2(pz, px) + time * 0.02
+      const flowSpeed = 0.008
+      positions[i * 3]     += Math.cos(flowAngle) * flowSpeed
+      positions[i * 3 + 1] += Math.sin(time * 0.1 + i * 0.01) * 0.003
+      positions[i * 3 + 2] += Math.sin(flowAngle) * flowSpeed
     }
   }
 
