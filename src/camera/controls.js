@@ -82,7 +82,7 @@ export function updateCameraSystem(dt) {
   if (mode === 'autopilot') {
     const result = updateAutopilot(dt)
     if (result) {
-      camera.position.lerp(result.position, 0.02)
+      camera.position.lerp(result.position, 0.06)
       camera.lookAt(result.lookAt)
     }
   } else if (mode === 'viewer') {
@@ -127,9 +127,9 @@ export function lockAutopilot() {
  * Unlock — allow user interaction to switch to viewer mode again.
  */
 export function unlockControls() {
-  // Just re-enables the interaction listeners' effect — they always fire,
-  // but switchToViewer only triggers if mode === 'autopilot'
-  orbit.enabled = false // autopilot still driving, orbit re-enables on interaction
+  mode = 'autopilot'
+  orbit.enabled = false
+  resumeAutopilot(camera.position.clone())
 }
 
 // Re-export interrupt methods for convenience

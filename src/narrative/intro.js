@@ -111,14 +111,23 @@ export async function runIntro(camera) {
   await sleep(400)
 
   // ---- Beat 6: "is this alive?" ----
-  // Seed remaining types so the cosmos is full
+  // Seed remaining types AND add extras of already-seeded types so cosmos is full
   const seededTypes = new Set([
     'about', 'poem', 'essay', 'music', 'ukraine',
     'conway', 'attention', 'gradient', 'tokenprob', 'wavefunction',
     'embedding', 'reactiondiffusion', 'apoptosis', 'network', 'lsystem',
   ])
+  // Fill in missing types (2 each)
   for (const type of TYPE_NAMES) {
     if (seededTypes.has(type)) continue
+    for (let i = 0; i < 3; i++) {
+      const cell = createCell(type)
+      addCellParticles(cell)
+    }
+  }
+  // Add 2 more of each already-seeded type for density
+  for (const type of seededTypes) {
+    if (type === 'about') continue
     for (let i = 0; i < 2; i++) {
       const cell = createCell(type)
       addCellParticles(cell)
