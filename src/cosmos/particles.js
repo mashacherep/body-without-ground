@@ -154,9 +154,10 @@ export function addCellParticles(cell, opts = {}) {
     // Color variation — muted, not neon. Mix toward grey for realism.
     const colorShift = (Math.random() - 0.5) * 0.15
     const mute = 0.7 + Math.random() * 0.3 // 70-100% of original saturation
-    colors[idx * 3]     = Math.max(0, Math.min(1, typeDef.color[0] * mute + colorShift))
-    colors[idx * 3 + 1] = Math.max(0, Math.min(1, typeDef.color[1] * mute + colorShift * 0.5))
-    colors[idx * 3 + 2] = Math.max(0, Math.min(1, typeDef.color[2] * mute - colorShift * 0.3))
+    // Cap at 0.75 — nothing should be white
+    colors[idx * 3]     = Math.max(0, Math.min(0.75, typeDef.color[0] * mute + colorShift))
+    colors[idx * 3 + 1] = Math.max(0, Math.min(0.75, typeDef.color[1] * mute + colorShift * 0.5))
+    colors[idx * 3 + 2] = Math.max(0, Math.min(0.75, typeDef.color[2] * mute - colorShift * 0.3))
 
     // Size: mostly tiny points, a few slightly larger
     const sizeRoll = Math.random()

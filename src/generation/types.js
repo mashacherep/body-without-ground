@@ -1,5 +1,5 @@
 export const CELL_TYPES = {
-  poem:              { color: [0.78, 0.76, 0.71], particleCount: 70, speed: 0.3 },
+  poem:              { color: [0.55, 0.52, 0.48], particleCount: 70, speed: 0.3 },
   conway:            { color: [0.31, 0.78, 0.47], particleCount: 85, speed: 0.6 },
   ascii:             { color: [0.31, 0.57, 0.84], particleCount: 60, speed: 0.4 },
   music:             { color: [0.84, 0.64, 0.19], particleCount: 75, speed: 0.8 },
@@ -8,7 +8,7 @@ export const CELL_TYPES = {
   attention:         { color: [1.00, 0.47, 0.31], particleCount: 70, speed: 0.5 },
   embedding:         { color: [0.39, 0.71, 1.00], particleCount: 75, speed: 0.4 },
   network:           { color: [0.71, 0.55, 1.00], particleCount: 70, speed: 0.5 },
-  weights:           { color: [0.78, 0.78, 0.71], particleCount: 100, speed: 0.3 },
+  weights:           { color: [0.45, 0.45, 0.40], particleCount: 70, speed: 0.3 },
   gradient:          { color: [0.31, 0.86, 0.63], particleCount: 60, speed: 0.7 },
   activation:        { color: [1.00, 0.71, 0.39], particleCount: 55, speed: 0.6 },
   loss:              { color: [0.47, 0.78, 0.71], particleCount: 70, speed: 0.5 },
@@ -25,7 +25,7 @@ export const CELL_TYPES = {
   lsystem:           { color: [0.31, 0.63, 0.24], particleCount: 75, speed: 0.3 },
   seismic:           { color: [0.47, 0.78, 0.71], particleCount: 60, speed: 0.6 },
   voronoi:           { color: [0.78, 0.47, 0.78], particleCount: 70, speed: 0.4 },
-  about:             { color: [0.96, 0.94, 0.89], particleCount: 100, speed: 0.15 },
+  about:             { color: [0.35, 0.38, 0.42], particleCount: 40, speed: 0.15 },
 }
 
 export const TYPE_NAMES = Object.keys(CELL_TYPES)
