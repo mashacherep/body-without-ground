@@ -130,8 +130,8 @@ export async function runIntro(camera) {
   // ═══════════════════════════════════════
   spawnWave(['apoptosis', 'embedding', 'network', 'neuralpass', 'orbit'])
 
-  await showText('60 billion of your cells will die today.', {
-    subtitle: 'programmed death is how the body maintains itself. you persist because parts of you don\'t. the machine has no program for dying.',
+  await showText('your body rebuilds itself every seven years.', {
+    subtitle: 'every cell replaced, every synapse rewired — and still you persist. continuity is not material. it is pattern carried forward.',
     fadeIn: 1000,
     hold: 4000,
     fadeOut: 900,
@@ -201,8 +201,15 @@ export async function runIntro(camera) {
   // ── Intro complete ──
   stopPullback()
   clearOverlay()
-  camera.position.set(0, 50, 150)
+
+  // Hold at a good viewing angle facing the cosmos center
+  camera.position.set(0, 40, 130)
   camera.lookAt(0, 0, 0)
+
+  // Let the camera sit here for 2 seconds so the viewer sees the full cosmos
+  // before autopilot starts drifting
+  await sleep(2000)
+
   setAutopilotSpeed(getBaseSpeed())
   unlockControls()
 }

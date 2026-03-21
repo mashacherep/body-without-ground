@@ -170,10 +170,8 @@ export function pauseAutopilot() {
  */
 export function resumeAutopilot(currentPosition) {
   active = true
-  // Re-anchor to nearest point on spline so we don't snap
-  if (!spline) {
-    generateSpline()
-  }
+  // Regenerate spline from current cells and re-anchor
+  generateSpline()
   let bestT = 0
   let bestDist = Infinity
   for (let i = 0; i <= 200; i++) {
@@ -186,6 +184,8 @@ export function resumeAutopilot(currentPosition) {
     }
   }
   t = bestT
+  // Start look target toward origin so camera faces the cosmos
+  lookTargetSmoothed.set(0, 0, 0)
 }
 
 export function isAutopilotActive() { return active }
