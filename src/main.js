@@ -22,6 +22,7 @@ import { startNarrativeArc } from './narrative/arc.js'
 import { initWhisper, updateWhisper } from './narrative/whisper.js'
 import { initClocks } from './signals/clocks.js'
 import { initVitals } from './signals/vitals.js'
+import { initLedger } from './reading/ledger.js'
 import { initMinimap } from './signals/minimap.js'
 import { getSessionCount, loadState, startAutoSave } from './state/persistence.js'
 import { initSound, startDrone, fadeDrone, silenceDrone, restoreDrone, updateDroneBreathing, playBirthTone, playDeathTone } from './signals/sound.js'
@@ -57,6 +58,7 @@ initWhisper()
 initClocks()
 initVitals()
 initMinimap()
+initLedger()
 
 // Sound prompt — shown after intro, dismissed on first click
 const soundPrompt = document.getElementById('sound-prompt')

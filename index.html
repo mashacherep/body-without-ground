@@ -312,6 +312,57 @@
   }
   #sound-prompt.visible { opacity: 1; }
 
+  /* Prompt transparency panel — raw inputs that produced the output */
+  #gen-feed-prompt {
+    font-family: 'Courier New', monospace;
+    font-size: 7px;
+    letter-spacing: 0.06em;
+    color: rgba(210,170,80,0.25);
+    margin-top: 12px;
+    line-height: 1.8;
+    max-width: 50vw;
+    text-align: center;
+    pointer-events: none;
+  }
+
+  /* Token confidence coloring — applied per-span in gen-feed-text */
+  #gen-feed-text .token-high { color: rgba(245,238,220,0.55); }
+  #gen-feed-text .token-mid  { color: rgba(245,238,220,0.3); }
+  #gen-feed-text .token-low  { color: rgba(220,70,50,0.65); }
+
+  /* Assumptions ledger — persistent scrollable log */
+  #assumptions-ledger {
+    position: fixed;
+    bottom: 60px;
+    right: 20px;
+    z-index: 8;
+    pointer-events: none;
+    font-family: 'Courier New', monospace;
+    font-size: 8px;
+    letter-spacing: 0.04em;
+    color: rgba(220,70,50,0.3);
+    text-align: right;
+    max-width: 280px;
+    max-height: 120px;
+    overflow: hidden;
+    line-height: 1.7;
+  }
+  #assumptions-ledger .ledger-count {
+    color: rgba(220,70,50,0.4);
+    margin-bottom: 4px;
+    font-size: 7px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  #assumptions-ledger .ledger-item {
+    opacity: 0;
+    transition: opacity 1.5s ease-in;
+    color: rgba(220,70,50,0.22);
+  }
+  #assumptions-ledger .ledger-item.visible {
+    opacity: 1;
+  }
+
   /* Ukraine clock in reading view */
   .reading-kyiv-clock {
     font-family: 'Courier New', monospace;
@@ -352,7 +403,11 @@
 <div id="gen-feed">
   <div id="gen-feed-type"></div>
   <div id="gen-feed-text"></div>
+  <div id="gen-feed-prompt"></div>
 </div>
+
+<!-- Assumptions ledger — persistent log of invented facts -->
+<div id="assumptions-ledger"></div>
 
 <div id="sound-prompt">click anywhere to let the garden breathe</div>
 <!-- Reading view overlay -->

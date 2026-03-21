@@ -5,7 +5,7 @@
  * Cells die after ~2 hours.
  */
 
-import { generateContent, isApiType, hasGroqKey } from './groq.js'
+import { generateContent, isApiType, hasGroqKey, getLastLogprobs } from './groq.js'
 import { createCell, getAliveCells, killCell } from '../state/cells.js'
 import { addCellParticles, getCellParticleMap } from '../cosmos/particles.js'
 import { triggerBirth } from '../cosmos/birth.js'
@@ -16,6 +16,8 @@ import { interruptDriftTo, interruptPullBack } from '../camera/controls.js'
 import { showText } from '../narrative/overlay.js'
 import { playBirthTone, playDeathTone } from '../signals/sound.js'
 import { spawnFromDeath } from '../cosmos/carriers.js'
+import { addAssumptions } from '../reading/ledger.js'
+import { showPromptContext } from '../reading/prompt-view.js'
 
 const BIRTH_INTERVAL = 240_000       // 4 minutes
 const DEATH_CHECK_INTERVAL = 60_000  // check every minute
@@ -130,20 +132,20 @@ async function birthCell() {
   let content = ''
   let assumptions = []
 
+  // Build context — used for both API calls and prompt transparency
+  const context = {
+    entropy,
+    tod: getTimeOfDay(),
+    genCount,
+    device: buildDeviceContext(),
+    markov: markovSeed(),
+    recent: recentContext(),
+    mourning: buildMourningContext(),
+    alertActive: false, // will be wired to real alerts later
+  }
+
   if (isApiType(type)) {
     if (hasGroqKey()) {
-      // Build context for Groq
-      const context = {
-        entropy,
-        tod: getTimeOfDay(),
-        genCount,
-        device: buildDeviceContext(),
-        markov: markovSeed(),
-        recent: recentContext(),
-        mourning: buildMourningContext(),
-        alertActive: false, // will be wired to real alerts later
-      }
-
       const result = await generateContent(type, context)
       if (result) {
         content = result.content
@@ -174,6 +176,7 @@ async function birthCell() {
   // Track assumptions
   if (assumptions.length > 0) {
     allAssumptions = allAssumptions.concat(assumptions)
+    addAssumptions(assumptions, allAssumptions.length)
   }
 
   // Trigger birth animation + sound
@@ -182,7 +185,7 @@ async function birthCell() {
 
   // Show content in generation feed (the viewer watches the machine write)
   if (content) {
-    showGenerationFeed(type, content)
+    showGenerationFeed(type, content, context)
   }
 
   // Drift camera toward the birth
@@ -290,13 +293,46 @@ export function restoreState(saved) {
   if (saved.deaths) totalDeaths = saved.deaths
 }
 
-// Generation feed — briefly shows new content as big text
+// Generation feed — briefly shows new content as big text, colored by token confidence
 let feedEl = null
 let feedTypeEl = null
 let feedTextEl = null
 let feedTimeout = null
 
-function showGenerationFeed(type, content) {
+/**
+ * Color a token span by model confidence.
+ * confidence = Math.exp(logprob), 0..1
+ */
+function tokenClass(logprob) {
+  const confidence = Math.exp(logprob)
+  if (confidence > 0.8) return 'token-high'
+  if (confidence > 0.3) return 'token-mid'
+  return 'token-low'
+}
+
+/**
+ * Build colored HTML from content + logprobs.
+ * Matches logprob tokens to displayed text character-by-character.
+ */
+function buildColoredText(content, logprobs) {
+  if (!logprobs || logprobs.length === 0) {
+    // No logprobs — return plain text (seed content)
+    return document.createTextNode(content)
+  }
+
+  const frag = document.createDocumentFragment()
+
+  for (const lp of logprobs) {
+    const span = document.createElement('span')
+    span.className = tokenClass(lp.logprob)
+    span.textContent = lp.token
+    frag.appendChild(span)
+  }
+
+  return frag
+}
+
+function showGenerationFeed(type, content, context) {
   if (!feedEl) {
     feedEl = document.getElementById('gen-feed')
     feedTypeEl = document.getElementById('gen-feed-type')
@@ -307,8 +343,18 @@ function showGenerationFeed(type, content) {
   // Show first 3 lines of content
   const lines = content.split('\n').filter(l => l.trim()).slice(0, 3).join('\n')
   feedTypeEl.textContent = type
-  feedTextEl.textContent = lines
+
+  // Color tokens by model confidence using logprobs
+  const logprobs = getLastLogprobs()
+  feedTextEl.innerHTML = ''
+  feedTextEl.appendChild(buildColoredText(lines, logprobs))
+
   feedEl.classList.add('visible')
+
+  // Show prompt transparency panel
+  if (context) {
+    showPromptContext(context, allAssumptions.length)
+  }
 
   if (feedTimeout) clearTimeout(feedTimeout)
   feedTimeout = setTimeout(() => {
