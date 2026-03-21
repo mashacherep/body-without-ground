@@ -110,8 +110,51 @@ export function updateParticles(time, breathPhase) {
     }
   }
 
+  // Per-type behaviors
+  for (const cell of cells) {
+    const mapping = cellParticleMap.get(cell.id)
+    if (!mapping) continue
+
+    switch (cell.type) {
+      case 'conway':
+        behaviorConway(positions, sizes, mapping.startIdx, mapping.count, time)
+        break
+      case 'ukraine':
+        behaviorUkraine(positions, sizes, alphas, mapping.startIdx, mapping.count, time, false)
+        break
+      case 'tokenprob':
+        behaviorTokenprob(positions, sizes, mapping.startIdx, mapping.count, time)
+        break
+      case 'attention':
+        behaviorAttention(positions, sizes, mapping.startIdx, mapping.count, time, cell.position)
+        break
+      case 'gradient':
+        behaviorGradient(positions, mapping.startIdx, mapping.count, time, cell.position)
+        break
+      case 'apoptosis':
+        behaviorApoptosis(positions, sizes, alphas, mapping.startIdx, mapping.count, time)
+        break
+      case 'wavefunction':
+        behaviorWavefunction(positions, mapping.startIdx, mapping.count, time, cell.position)
+        break
+      case 'seismic':
+        behaviorSeismic(positions, mapping.startIdx, mapping.count, 0.5)
+        break
+      case 'embedding':
+        behaviorEmbedding(positions, mapping.startIdx, mapping.count, time, cell.position)
+        break
+      case 'reactiondiffusion':
+        behaviorReactionDiffusion(positions, sizes, mapping.startIdx, mapping.count, time, cell.position)
+        break
+    }
+  }
+
+  // Flag additional buffers
   if (points) {
     points.geometry.attributes.position.needsUpdate = true
+    points.geometry.attributes.aSize.needsUpdate = true
+    points.geometry.attributes.aAlpha.needsUpdate = true
+    points.geometry.attributes.aColor.needsUpdate = true
   }
 }
 
