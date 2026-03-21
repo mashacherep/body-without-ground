@@ -123,8 +123,8 @@ export async function runIntro(camera) {
   spawnWave(['apoptosis', 'neuralpass', 'orbit', 'hypergraph', 'stringrewrite', 'tokenprob', 'weights'])
   for (const t of ['conway', 'conway', 'poem', 'music', 'essay', 'reactiondiffusion', 'lsystem', 'wavefunction']) addCellParticles(createCell(t))
 
-  await showText('your body rebuilds itself every seven years.', {
-    subtitle: 'every cell replaced, every synapse rewired — and still you persist. continuity is not material. it is pattern carried forward.',
+  await showText('your gut lining is three days old. your neurons are as old as you.', {
+    subtitle: 'some parts of you are ancient, some are hours old — and still you persist. continuity is not material. it is pattern carried forward.',
     fadeIn: 1000,
     hold: 4000,
     fadeOut: 900,
