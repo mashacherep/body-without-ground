@@ -14,6 +14,7 @@ import { TYPE_NAMES } from './types.js'
 import { extractWords, markovSeed, recentContext } from './markov.js'
 import { interruptDriftTo, interruptPullBack } from '../camera/controls.js'
 import { showText } from '../narrative/overlay.js'
+import { playBirthTone, playDeathTone } from '../signals/sound.js'
 
 const BIRTH_INTERVAL = 240_000       // 4 minutes
 const DEATH_CHECK_INTERVAL = 60_000  // check every minute
@@ -174,8 +175,9 @@ async function birthCell() {
     allAssumptions = allAssumptions.concat(assumptions)
   }
 
-  // Trigger birth animation
+  // Trigger birth animation + sound
   triggerBirth(cell)
+  playBirthTone()
 
   // Drift camera toward the birth
   interruptDriftTo(cell.position, 0.3)
@@ -201,6 +203,7 @@ function deathCheck() {
 
       killCell(cell.id)
       triggerDeath(cell, cpm)
+      playDeathTone()
       totalDeaths++
 
       // Camera pulls back to witness the death

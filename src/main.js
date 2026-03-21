@@ -16,6 +16,7 @@ import { startAlertChecking, onAlertChange, isAlertActive } from './signals/aler
 import { holdBreath, releaseBreath } from './cosmos/breathing.js'
 import { showText } from './narrative/overlay.js'
 import { startScheduler } from './generation/scheduler.js'
+import { startNarrativeArc } from './narrative/arc.js'
 import { initWhisper, updateWhisper } from './narrative/whisper.js'
 import { initClocks } from './signals/clocks.js'
 import { initSound, startDrone, fadeDrone, silenceDrone, restoreDrone, updateDroneBreathing, playBirthTone, playDeathTone } from './signals/sound.js'
@@ -85,6 +86,7 @@ document.addEventListener('click', handleFirstClick)
 // After intro completes, start the life cycle and show sound prompt
 runIntro(camera).then(() => {
   startScheduler()
+  startNarrativeArc()
   // Show sound prompt after intro so the viewer knows to click
   if (soundPrompt && !soundStarted) soundPrompt.classList.add('visible')
 })
