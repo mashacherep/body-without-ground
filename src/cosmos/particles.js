@@ -192,17 +192,69 @@ export function updateParticles(time, breathPhase) {
     const mapping = cellParticleMap.get(cell.id)
     if (!mapping) continue
     const typeDef = CELL_TYPES[cell.type]
-    const speed = typeDef.speed * 0.02
+    const baseSpeed = typeDef.speed * 0.02
+    const cx = cell.position[0]
+    const cy = cell.position[1]
+    const cz = cell.position[2]
 
     for (let i = mapping.startIdx; i < mapping.startIdx + mapping.count; i++) {
-      const phase = phases[i] + time * speed
-      const cx = cell.position[0]
-      const cy = cell.position[1]
-      const cz = cell.position[2]
-      const orbitR = 2 + Math.sin(phase * 0.7) * 2
-      positions[i * 3]     += (cx + Math.cos(phase) * orbitR - positions[i * 3]) * 0.01
-      positions[i * 3 + 1] += (cy + Math.sin(phase * 1.3) * orbitR - positions[i * 3 + 1]) * 0.01
-      positions[i * 3 + 2] += (cz + Math.sin(phase * 0.9) * orbitR - positions[i * 3 + 2]) * 0.01
+      const p = phases[i] // unique per particle
+      const localIdx = i - mapping.startIdx
+      const t = localIdx / mapping.count
+
+      // Each particle has unique orbital parameters derived from its phase
+      const inclination = p * 1.3        // orbital plane tilt
+      const eccentricity = 0.3 + Math.sin(p * 2.7) * 0.5  // 0=circle, ~0.8=very elliptical
+      const direction = p > Math.PI ? 1 : -1  // ~50% retrograde
+      const speedMod = (0.5 + Math.sin(p * 3.1) * 0.5) * baseSpeed * direction
+
+      // Kepler-ish: closer particles orbit faster
+      const dx = positions[i * 3] - cx
+      const dy = positions[i * 3 + 1] - cy
+      const dz = positions[i * 3 + 2] - cz
+      const dist = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1
+      const keplerFactor = Math.min(2, 3 / (dist + 1))
+
+      // Orbital motion in a tilted plane
+      const phase = p + time * speedMod * keplerFactor
+      const orbitR = (2 + Math.sin(phase * 0.7) * eccentricity * 3)
+
+      // Target position — elliptical orbit in a tilted plane
+      const tx = cx + Math.cos(phase) * orbitR
+      const ty = cy + Math.sin(phase * (0.5 + inclination * 0.3)) * orbitR * Math.sin(inclination)
+      const tz = cz + Math.sin(phase) * orbitR * Math.cos(inclination * 0.7)
+
+      // Brownian jitter — tiny random kicks
+      const jitter = 0.015
+      const jx = (Math.random() - 0.5) * jitter
+      const jy = (Math.random() - 0.5) * jitter
+      const jz = (Math.random() - 0.5) * jitter
+
+      // Smooth interpolation toward target + jitter
+      const lerpSpeed = 0.008 + t * 0.004 // outer particles respond slightly faster
+      positions[i * 3]     += (tx - positions[i * 3]) * lerpSpeed + jx
+      positions[i * 3 + 1] += (ty - positions[i * 3 + 1]) * lerpSpeed + jy
+      positions[i * 3 + 2] += (tz - positions[i * 3 + 2]) * lerpSpeed + jz
+    }
+
+    // Inter-cluster gravity — particles near the edge get pulled toward nearby clusters
+    const nearCells = cells.filter(c => c.id !== cell.id)
+    for (let n = 0; n < Math.min(3, nearCells.length); n++) {
+      const neighbor = nearCells[n]
+      const ndx = neighbor.position[0] - cx
+      const ndy = neighbor.position[1] - cy
+      const ndz = neighbor.position[2] - cz
+      const ndist = Math.sqrt(ndx * ndx + ndy * ndy + ndz * ndz)
+      if (ndist > 50 || ndist < 5) continue
+
+      // Pull outer 20% of particles slightly toward neighbor (tidal effect)
+      const gravityStrength = 0.0003 / (ndist * 0.1)
+      const startPull = mapping.startIdx + Math.floor(mapping.count * 0.8)
+      for (let i = startPull; i < mapping.startIdx + mapping.count; i++) {
+        positions[i * 3]     += ndx * gravityStrength
+        positions[i * 3 + 1] += ndy * gravityStrength
+        positions[i * 3 + 2] += ndz * gravityStrength
+      }
     }
   }
 
