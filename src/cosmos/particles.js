@@ -92,20 +92,82 @@ export function addCellParticles(cell, opts = {}) {
 
   if (particleCount + count > MAX_PARTICLES) return
 
+  // Each cell type gets a unique cluster shape
+  const typeIdx = Object.keys(CELL_TYPES).indexOf(cell.type)
+  const shapeType = typeIdx % 5 // 0=sphere, 1=ring, 2=filament/streak, 3=spiral, 4=asymmetric blob
+
   for (let i = 0; i < count; i++) {
     const idx = particleCount + i
-
+    const t = i / count // normalized position within cluster
+    const angle = t * Math.PI * 2 * (1 + typeIdx * 0.3)
     const spread = opts.collapsed ? 0.1 : (5 + Math.random() * 8)
-    positions[idx * 3]     = cell.position[0] + (Math.random() - 0.5) * spread
-    positions[idx * 3 + 1] = cell.position[1] + (Math.random() - 0.5) * spread
-    positions[idx * 3 + 2] = cell.position[2] + (Math.random() - 0.5) * spread
 
-    colors[idx * 3]     = typeDef.color[0]
-    colors[idx * 3 + 1] = typeDef.color[1]
-    colors[idx * 3 + 2] = typeDef.color[2]
+    let dx, dy, dz
 
-    sizes[idx] = 1.5 + Math.random() * 3.0
-    alphas[idx] = 0.5 + Math.random() * 0.5
+    if (shapeType === 0) {
+      // Sphere — classic, but with varied density (denser at center)
+      const r = Math.pow(Math.random(), 0.6) * spread
+      const theta = Math.random() * Math.PI * 2
+      const phi = Math.acos(2 * Math.random() - 1)
+      dx = Math.sin(phi) * Math.cos(theta) * r
+      dy = Math.sin(phi) * Math.sin(theta) * r
+      dz = Math.cos(phi) * r
+    } else if (shapeType === 1) {
+      // Ring / torus — particles form a ring with some thickness
+      const ringR = spread * 0.7
+      const tubeR = spread * 0.25
+      const ringAngle = angle
+      const tubeAngle = Math.random() * Math.PI * 2
+      dx = (ringR + Math.cos(tubeAngle) * tubeR) * Math.cos(ringAngle)
+      dy = Math.sin(tubeAngle) * tubeR
+      dz = (ringR + Math.cos(tubeAngle) * tubeR) * Math.sin(ringAngle)
+    } else if (shapeType === 2) {
+      // Filament / streak — elongated along one axis
+      const stretchAxis = typeIdx % 3
+      const len = spread * 1.5
+      const width = spread * 0.3
+      dx = stretchAxis === 0 ? (Math.random() - 0.5) * len : (Math.random() - 0.5) * width
+      dy = stretchAxis === 1 ? (Math.random() - 0.5) * len : (Math.random() - 0.5) * width
+      dz = stretchAxis === 2 ? (Math.random() - 0.5) * len : (Math.random() - 0.5) * width
+    } else if (shapeType === 3) {
+      // Spiral — particles wind outward
+      const spiralR = t * spread
+      const spiralAngle = t * Math.PI * 6 + typeIdx
+      dx = Math.cos(spiralAngle) * spiralR
+      dy = (t - 0.5) * spread * 0.5
+      dz = Math.sin(spiralAngle) * spiralR
+    } else {
+      // Asymmetric blob — lopsided, organic
+      const r = Math.pow(Math.random(), 0.4) * spread
+      const bias = Math.sin(typeIdx * 1.7) * 0.6
+      const theta = Math.random() * Math.PI * 2
+      const phi = Math.acos(2 * Math.random() - 1)
+      dx = Math.sin(phi) * Math.cos(theta) * r + bias * spread * 0.3
+      dy = Math.sin(phi) * Math.sin(theta) * r * 0.6
+      dz = Math.cos(phi) * r - bias * spread * 0.2
+    }
+
+    positions[idx * 3]     = cell.position[0] + dx
+    positions[idx * 3 + 1] = cell.position[1] + dy
+    positions[idx * 3 + 2] = cell.position[2] + dz
+
+    // Color variation within cluster — slight hue shift per particle
+    const colorShift = (Math.random() - 0.5) * 0.12
+    colors[idx * 3]     = Math.max(0, Math.min(1, typeDef.color[0] + colorShift))
+    colors[idx * 3 + 1] = Math.max(0, Math.min(1, typeDef.color[1] + colorShift * 0.5))
+    colors[idx * 3 + 2] = Math.max(0, Math.min(1, typeDef.color[2] - colorShift * 0.3))
+
+    // Dramatic size variation — a few very large "core" particles, many tiny ones
+    const sizeRoll = Math.random()
+    if (sizeRoll > 0.95) {
+      sizes[idx] = 4.0 + Math.random() * 4.0 // rare large particles
+    } else if (sizeRoll > 0.7) {
+      sizes[idx] = 2.0 + Math.random() * 2.0 // medium
+    } else {
+      sizes[idx] = 0.5 + Math.random() * 1.5 // many tiny ones
+    }
+
+    alphas[idx] = 0.4 + Math.random() * 0.5
     phases[idx] = Math.random() * Math.PI * 2
   }
 
