@@ -52,7 +52,7 @@ export function spawnCarrier(position, color, word) {
   // Random direction with slight bias upward
   const theta = Math.random() * Math.PI * 2
   const phi = Math.acos(2 * Math.random() - 1)
-  const speed = 0.04 + Math.random() * 0.06 // MUCH slower — graceful drift
+  const speed = 0.12 + Math.random() * 0.15 // fast and visible — like shooting stars
 
   carriers.push({
     x: position[0], y: position[1], z: position[2],
@@ -133,9 +133,9 @@ export function updateCarriers(time) {
   for (let i = 0; i < carriers.length && idx < MAX_CARRIERS; i++) {
     const c = carriers[i]
     const fade = Math.min(1, c.age / 50) * Math.max(0, 1 - c.age / c.maxAge)
-    const trailLen = 6     // bright head segment — MUCH longer
-    const trailLen2 = 14   // mid trail
-    // total trail length ~21 units — very visible
+    const trailLen = 8
+    const trailLen2 = 20
+    // total trail ~30 units — shooting star visible
 
     // Direction vector (normalized velocity)
     const speed = Math.sqrt(c.vx * c.vx + c.vy * c.vy + c.vz * c.vz) || 0.01
