@@ -120,11 +120,23 @@ function initDeviceSignals() {
 }
 
 /**
+ * Birth a cell of a specific type (used for forced first generations).
+ */
+async function birthCellForced(forcedType) {
+  const origType = forcedType
+  await birthCellWithType(origType)
+}
+
+/**
  * Birth a new cell. Picks a random type and generates content if needed.
  */
 async function birthCell() {
   const type = TYPE_NAMES[Math.floor(Math.random() * TYPE_NAMES.length)]
-  if (type === 'about') return // about node doesn't replicate
+  if (type === 'about') return
+  await birthCellWithType(type)
+}
+
+async function birthCellWithType(type) {
 
   genCount++
   const entropy = (Math.random() * 0.9998 + 0.0001).toFixed(9)
@@ -255,8 +267,10 @@ export function startScheduler() {
   const FAST_BIRTH_INTERVAL = 45_000
   const FAST_PHASE_DURATION = 600_000 // 10 minutes
 
-  // First birth after a short delay
-  setTimeout(() => birthCell(), 5000)
+  // First birth: force a poem so Groq generates immediately
+  setTimeout(() => birthCellForced('poem'), 3000)
+  // Second: force an essay 15s later
+  setTimeout(() => birthCellForced('ukraine'), 18000)
 
   // Start fast
   birthTimer = setInterval(() => birthCell(), FAST_BIRTH_INTERVAL)
