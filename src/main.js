@@ -1,4 +1,7 @@
 import * as THREE from 'three'
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js'
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js'
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { getCells, getAliveCells, killCell } from './state/cells.js'
 import { initParticles, updateParticles, getBuffers, getCellParticleMap } from './cosmos/particles.js'
 import { triggerBirth, updateBirths } from './cosmos/birth.js'
@@ -36,6 +39,17 @@ const renderer = new THREE.WebGLRenderer({ antialias: true })
 renderer.setSize(innerWidth, innerHeight)
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2))
 document.body.appendChild(renderer.domElement)
+
+// Post-processing: bloom
+const composer = new EffectComposer(renderer)
+composer.addPass(new RenderPass(scene, camera))
+const bloomPass = new UnrealBloomPass(
+  new THREE.Vector2(innerWidth, innerHeight),
+  0.6,    // strength — subtle, not J.J. Abrams
+  0.4,    // radius — how far the glow spreads
+  0.85    // threshold — only bright things bloom
+)
+composer.addPass(bloomPass)
 
 // Nebula background glow — large soft spheres for ambient galaxy light
 function addNebula(x, y, z, radius, color, opacity) {
@@ -190,7 +204,7 @@ function animate() {
   // Whisper panel — show text from nearby cells
   updateWhisper(camera)
 
-  renderer.render(scene, camera)
+  composer.render()
 }
 animate()
 
@@ -199,6 +213,7 @@ window.addEventListener('resize', () => {
   camera.aspect = innerWidth / innerHeight
   camera.updateProjectionMatrix()
   renderer.setSize(innerWidth, innerHeight)
+  composer.setSize(innerWidth, innerHeight)
 })
 
 // Prevent WebGL context loss on focus change (Cmd+4 screenshot, tab switch)
