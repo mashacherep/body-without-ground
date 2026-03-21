@@ -7,7 +7,7 @@ const mouse = new THREE.Vector2()
 const _cellPos = new THREE.Vector3()
 const _closestPoint = new THREE.Vector3()
 
-const HIT_RADIUS = 12 // world units — how close the ray must pass to a cell center
+const HIT_RADIUS = 20 // world units — how close the ray must pass to a cell center
 
 /**
  * Given a click event and camera, find the nearest cell to the click ray.

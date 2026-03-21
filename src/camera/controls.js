@@ -30,17 +30,31 @@ export function initCameraSystem(cam, domElement) {
   camera = cam
   domEl = domElement
 
-  // Mouse look (drag)
+  // Mouse look (drag with dead zone to allow double-click)
+  let dragStart = null
+  let dragActive = false
+
   domElement.addEventListener('pointerdown', (e) => {
     if (e.button === 0 || e.button === 2) {
-      isDragging = true
+      dragStart = { x: e.clientX, y: e.clientY }
+      dragActive = false
       lastMouse = { x: e.clientX, y: e.clientY }
-      onUserInteraction()
     }
   })
 
   window.addEventListener('pointermove', (e) => {
-    if (!isDragging || mode === 'autopilot') return
+    if (!dragStart) return
+
+    // Dead zone: only start looking after 4px of movement
+    if (!dragActive) {
+      const dx = e.clientX - dragStart.x
+      const dy = e.clientY - dragStart.y
+      if (Math.sqrt(dx * dx + dy * dy) < 4) return
+      dragActive = true
+      onUserInteraction()
+    }
+
+    if (mode === 'autopilot') return
     const dx = e.clientX - lastMouse.x
     const dy = e.clientY - lastMouse.y
     lastMouse = { x: e.clientX, y: e.clientY }
@@ -52,7 +66,7 @@ export function initCameraSystem(cam, domElement) {
     camera.quaternion.setFromEuler(euler)
   })
 
-  window.addEventListener('pointerup', () => { isDragging = false })
+  window.addEventListener('pointerup', () => { dragStart = null; dragActive = false })
 
   // Scroll = fly forward/back
   domElement.addEventListener('wheel', (e) => {
