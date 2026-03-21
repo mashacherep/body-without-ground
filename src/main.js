@@ -31,7 +31,7 @@ scene.fog = new THREE.FogExp2(0x040610, 0.002)
 
 // Camera
 const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 5000)
-camera.position.set(5, 3, 15) // Start inside the cosmos for intro
+camera.position.set(0, 15, 60) // Start at medium distance — cosmos visible from the start
 
 // Renderer
 const renderer = new THREE.WebGLRenderer({ antialias: true })
