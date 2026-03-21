@@ -103,6 +103,69 @@
   }
   #kyiv-clock { color: rgba(220,165,55,0.5); }
   #nyc-clock { color: rgba(120,165,220,0.4); }
+
+  /* Machine vitals HUD — bottom right */
+  #vitals-hud {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 8;
+    pointer-events: none;
+    font-family: 'Courier New', monospace;
+    font-size: 8px;
+    letter-spacing: 0.06em;
+    color: rgba(255,255,255,0.12);
+    text-align: right;
+    line-height: 1.9;
+  }
+
+  /* Assumptions counter — bottom center */
+  #assumptions-counter {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 8;
+    pointer-events: none;
+    font-family: 'Courier New', monospace;
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    color: rgba(200,62,42,0.3);
+    text-align: center;
+    opacity: 0;
+    transition: opacity 2s;
+  }
+  #assumptions-counter.visible { opacity: 1; }
+
+  /* Generation feed — shows new content briefly */
+  #gen-feed {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 9;
+    pointer-events: none;
+    max-width: 70vw;
+    text-align: center;
+    opacity: 0;
+    transition: opacity 1.2s;
+  }
+  #gen-feed.visible { opacity: 1; }
+  #gen-feed-text {
+    font-family: Georgia, serif;
+    font-size: clamp(1rem, 2.5vw, 1.6rem);
+    color: rgba(245,238,220,0.5);
+    font-style: italic;
+    line-height: 1.7;
+  }
+  #gen-feed-type {
+    font-family: 'Courier New', monospace;
+    font-size: 8px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.15);
+    margin-bottom: 8px;
+  }
   #alert-badge {
     color: rgba(255,80,60,0.7);
     font-size: 8px;
@@ -276,6 +339,18 @@
   <div id="kyiv-clock">KYIV --:--</div>
   <div id="nyc-clock">NYC --:--</div>
   <div id="alert-badge">AIR RAID ALERT — KYIV</div>
+</div>
+
+<!-- Machine vitals HUD -->
+<div id="vitals-hud"></div>
+
+<!-- Assumptions counter -->
+<div id="assumptions-counter"></div>
+
+<!-- Generation feed -->
+<div id="gen-feed">
+  <div id="gen-feed-type"></div>
+  <div id="gen-feed-text"></div>
 </div>
 
 <div id="sound-prompt">click anywhere to let the garden breathe</div>

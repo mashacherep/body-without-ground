@@ -179,6 +179,11 @@ async function birthCell() {
   triggerBirth(cell)
   playBirthTone()
 
+  // Show content in generation feed (the viewer watches the machine write)
+  if (content) {
+    showGenerationFeed(type, content)
+  }
+
   // Drift camera toward the birth
   interruptDriftTo(cell.position, 0.3)
 
@@ -274,3 +279,29 @@ export function getGenCount() { return genCount }
 export function getTotalDeaths() { return totalDeaths }
 export function getAllAssumptions() { return allAssumptions }
 export function getMourningWords() { return mourningWords }
+
+// Generation feed — briefly shows new content as big text
+let feedEl = null
+let feedTypeEl = null
+let feedTextEl = null
+let feedTimeout = null
+
+function showGenerationFeed(type, content) {
+  if (!feedEl) {
+    feedEl = document.getElementById('gen-feed')
+    feedTypeEl = document.getElementById('gen-feed-type')
+    feedTextEl = document.getElementById('gen-feed-text')
+  }
+  if (!feedEl) return
+
+  // Show first 3 lines of content
+  const lines = content.split('\n').filter(l => l.trim()).slice(0, 3).join('\n')
+  feedTypeEl.textContent = type
+  feedTextEl.textContent = lines
+  feedEl.classList.add('visible')
+
+  if (feedTimeout) clearTimeout(feedTimeout)
+  feedTimeout = setTimeout(() => {
+    feedEl.classList.remove('visible')
+  }, 6000) // visible for 6 seconds
+}
