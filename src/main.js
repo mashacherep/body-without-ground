@@ -18,6 +18,7 @@ import { showText } from './narrative/overlay.js'
 import { startLifeCycle } from './generation/lifecycle.js'
 import { initWhisper, updateWhisper } from './narrative/whisper.js'
 import { initClocks } from './signals/clocks.js'
+import { initSound, startDrone, fadeDrone, silenceDrone, restoreDrone, updateDroneBreathing, playBirthTone, playDeathTone } from './signals/sound.js'
 
 // Scene
 const scene = new THREE.Scene()
@@ -66,10 +67,26 @@ initFilaments(scene)
 initWhisper()
 initClocks()
 
+// Sound prompt — shown after intro, dismissed on first click
+const soundPrompt = document.getElementById('sound-prompt')
+let soundStarted = false
+
+function handleFirstClick() {
+  if (soundStarted) return
+  soundStarted = true
+  initSound()
+  startDrone()
+  if (soundPrompt) soundPrompt.classList.remove('visible')
+  document.removeEventListener('click', handleFirstClick)
+}
+document.addEventListener('click', handleFirstClick)
+
 // Run intro — seeds cosmos gradually during the text beats
-// After intro completes, start the life cycle
+// After intro completes, start the life cycle and show sound prompt
 runIntro(camera).then(() => {
   startLifeCycle()
+  // Show sound prompt after intro so the viewer knows to click
+  if (soundPrompt && !soundStarted) soundPrompt.classList.add('visible')
 })
 
 // Air raid alerts — cosmos responds to real alerts in Kyiv
@@ -82,6 +99,7 @@ onAlertChange((active) => {
   raidActive = active
   if (active) {
     holdBreath()
+    silenceDrone()
     // Show badge
     if (alertBadge) alertBadge.classList.add('active')
     // Dim the scene
@@ -96,6 +114,7 @@ onAlertChange((active) => {
     showText(pick.text, { subtitle: pick.subtitle, fadeIn: 2000, hold: 10000, fadeOut: 2000 })
   } else {
     releaseBreath()
+    restoreDrone()
     if (alertBadge) alertBadge.classList.remove('active')
     scene.fog = new THREE.FogExp2(0x050508, 0.002) // restore normal fog
     showText('all clear. kyiv.', {
@@ -112,6 +131,7 @@ renderer.domElement.addEventListener('dblclick', (e) => {
   const cell = findClickedCell(e, camera, renderer.domElement)
   if (cell) {
     enterReadingView(cell, camera)
+    fadeDrone(0.1) // quiet during reading
     setTimeout(() => showReadingPanel(cell), 600)
   }
 })
@@ -136,6 +156,7 @@ function dismissReadingView() {
   stopActiveViz()
   hideReadingPanel()
   exitReadingView()
+  startDrone() // restore drone when returning to cosmos
 }
 
 // Animation loop
@@ -146,6 +167,7 @@ function animate() {
   const dt = clock.getDelta()
   const elapsed = clock.getElapsedTime()
   const breathPhase = updateBreathing(dt, 0, 1)
+  updateDroneBreathing(breathPhase)
 
   updateParticles(elapsed, breathPhase)
   const bufs = getBuffers()

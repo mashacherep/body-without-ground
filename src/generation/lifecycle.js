@@ -11,6 +11,7 @@ import { triggerDeath } from '../cosmos/death.js'
 import { TYPE_NAMES } from './types.js'
 import { showText } from '../narrative/overlay.js'
 import { interruptDriftTo, interruptPullBack } from '../camera/controls.js'
+import { playBirthTone, playDeathTone } from '../signals/sound.js'
 
 const BIRTH_INTERVAL = 240_000    // 4 minutes — a new cell is born
 const DEATH_CHECK_INTERVAL = 60_000 // check for deaths every minute
@@ -31,6 +32,7 @@ export function startLifeCycle() {
 
     const cell = createCell(type)
     triggerBirth(cell)
+    playBirthTone()
 
     // Drift camera toward the birth
     interruptDriftTo(cell.position, 0.3)
@@ -47,6 +49,7 @@ export function startLifeCycle() {
       if (now - cell.createdAt > CELL_LIFESPAN) {
         killCell(cell.id)
         triggerDeath(cell, cpm)
+        playDeathTone()
         totalDeaths++
 
         // Camera pulls back to witness the death

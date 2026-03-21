@@ -229,6 +229,22 @@
     text-align: center;
   }
 
+  #sound-prompt {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 12;
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: rgba(255,255,255,0.2);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 1.5s;
+  }
+  #sound-prompt.visible { opacity: 1; }
+
   /* Ukraine clock in reading view */
   .reading-kyiv-clock {
     font-family: 'Courier New', monospace;
@@ -258,6 +274,7 @@
   <div id="alert-badge">AIR RAID ALERT — KYIV</div>
 </div>
 
+<div id="sound-prompt">click anywhere to let the garden breathe</div>
 <!-- Reading view overlay -->
 <div id="reading-overlay" aria-live="polite">
   <div id="reading-panel">
