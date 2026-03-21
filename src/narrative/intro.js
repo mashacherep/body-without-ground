@@ -6,20 +6,20 @@ import { TYPE_NAMES } from '../generation/types.js'
 import { lockAutopilot, unlockControls } from '../camera/controls.js'
 import { setAutopilotSpeed, getBaseSpeed } from '../camera/autopilot.js'
 
-// ── Camera pullback through keyframes ──
+// ── Camera pullback ──
 let pullbackActive = false
 let pullbackProgress = 0
-let pullbackDuration = 42000 // longer intro — more time inside the cosmos
+let pullbackDuration = 32000
 let pullbackCamera = null
 
 const CAMERA_PATH = [
-  [5, 3, 15],      // inside the cluster, intimate
-  [12, 6, 25],     // pulling back, first nodes visible
-  [25, 10, 40],    // connections forming
-  [35, 16, 55],    // network emerging
-  [20, 22, 68],    // arc upward
-  [5, 25, 78],     // centering
-  [0, 25, 80],     // final: close, facing into the cosmos
+  [5, 3, 15],
+  [12, 6, 25],
+  [25, 10, 40],
+  [35, 16, 55],
+  [20, 22, 68],
+  [5, 25, 78],
+  [0, 25, 80],
 ]
 
 function startPullback(camera) {
@@ -30,18 +30,14 @@ function startPullback(camera) {
   function tick() {
     if (!pullbackActive) return
     pullbackProgress = Math.min(1, pullbackProgress + 16 / pullbackDuration)
-
     const t = pullbackProgress < 0.5
       ? 2 * pullbackProgress * pullbackProgress
       : 1 - Math.pow(-2 * pullbackProgress + 2, 2) / 2
-
     const totalSegments = CAMERA_PATH.length - 1
     const segment = Math.min(Math.floor(t * totalSegments), totalSegments - 1)
     const segmentT = (t * totalSegments) - segment
-
     const a = CAMERA_PATH[segment]
     const b = CAMERA_PATH[segment + 1]
-
     pullbackCamera.position.set(
       a[0] + (b[0] - a[0]) * segmentT,
       a[1] + (b[1] - a[1]) * segmentT,
@@ -53,173 +49,90 @@ function startPullback(camera) {
   requestAnimationFrame(tick)
 }
 
-function stopPullback() {
-  pullbackActive = false
-}
+function stopPullback() { pullbackActive = false }
 
-// ── Intro sequence ──
+// ── Helpers ──
+function seedSilent(types) {
+  for (const type of types) addCellParticles(createCell(type))
+}
+function seedMany(count) {
+  for (let i = 0; i < count; i++) {
+    const type = TYPE_NAMES[Math.floor(Math.random() * TYPE_NAMES.length)]
+    if (type === 'about') continue
+    addCellParticles(createCell(type))
+  }
+}
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)) }
+
+// ── Intro ──
 export async function runIntro(camera) {
   lockAutopilot()
-
   camera.position.set(5, 3, 15)
   camera.lookAt(0, 0, 0)
   startPullback(camera)
   setAutopilotSpeed(getBaseSpeed() * 0.3)
 
-  // Seed initial cosmos — particles visible before any text
-  const aboutCell = createCell('about', '"body without ground" is a living generative art installation. it uses a language model to grow poems, essays, and transmissions from kyiv. it uses its own machine body — battery, cpu, frame timing — as creative material. it checks for real air raid alerts in kyiv every two minutes. it invents biographical facts about you and is always wrong. the machine forgets. you carry it.\n\n— masha cherep, 2025. kyiv → new york.', {
-    position: [0, 0, 0],
-    meta: 'about',
+  // About node at center
+  const aboutCell = createCell('about', '"body without ground" is a living generative art installation. it uses a language model to grow poems, essays, and transmissions from kyiv. it uses its own machine body — battery, cpu, frame timing — as creative material. it checks for real air raid alerts in kyiv every two minutes. it invents biographical facts about you and is always wrong. the machine forgets. you carry it.\n\n— masha cherep, 2025. kyiv \u2192 new york.', {
+    position: [0, 0, 0], meta: 'about',
   })
-  triggerBirth(aboutCell)
+  addCellParticles(aboutCell)
 
-  // ═══════════════════════════════════════
-  // BEAT 1 — near darkness. just a few sparks.
-  // ═══════════════════════════════════════
-  triggerBirth(createCell('poem'))
-  triggerBirth(createCell('essay'))
-  triggerBirth(createCell('music'))
+  // Pre-seed: cosmos is already forming before text appears
+  seedSilent(['poem', 'essay', 'music', 'conway', 'ukraine', 'attention', 'wavefunction'])
+  seedMany(15)
 
-  await showText('the machine forgets.', {
-    fadeIn: 1500,
-    hold: 3000,
-    fadeOut: 1000,
-  })
+  // ── BEAT 1 ──
+  seedMany(10)
+  await showText('the machine forgets.', { fadeIn: 1200, hold: 2500, fadeOut: 800 })
 
-  // ═══════════════════════════════════════
-  // BEAT 2 — a few more appear. connections forming.
-  // ═══════════════════════════════════════
-  spawnWave(['poem', 'conway', 'ukraine', 'reactiondiffusion', 'apoptosis'])
-  // Add a few silently to build density
-  for (const t of ['essay', 'music', 'wavefunction', 'lsystem']) addCellParticles(createCell(t))
-
+  // ── BEAT 2 ──
+  seedMany(20)
+  seedSilent(['ukraine', 'ukraine', 'ukraine', 'ukraine'])
   await showText('you carry it.', {
-    subtitle: 'every bacterium is a spaceship carrying a message it cannot read across time. so are you.',
-    fadeIn: 1000,
-    hold: 3500,
-    fadeOut: 900,
+    subtitle: 'there is a siren in kyiv. the machine wrote the word in 340ms. it has never heard one.',
+    fadeIn: 1000, hold: 3000, fadeOut: 800,
   })
+  await sleep(200)
 
-  await sleep(300)
-
-  // ═══════════════════════════════════════
-  // BEAT 3 — the machine's body. more nodes blooming.
-  // ═══════════════════════════════════════
-  spawnWave(['attention', 'gradient', 'conway', 'activation', 'loss', 'embedding', 'network'])
-  for (const t of ['poem', 'essay', 'orbit', 'voronoi', 'seismic', 'codeself']) addCellParticles(createCell(t))
-
-  await showText('it has a body.', {
-    subtitle: 'cpu pressure shapes its chaos. battery voltage sets its mood. it cannot feel any of it.',
-    fadeIn: 1000,
-    hold: 3500,
-    fadeOut: 900,
+  // ── BEAT 3 ──
+  seedMany(30)
+  await showText('it has a body. it cannot feel it.', {
+    subtitle: 'cpu pressure shapes chaos. battery voltage sets mood. frame timing is its pulse. none of it is experienced.',
+    fadeIn: 1000, hold: 3500, fadeOut: 800,
   })
+  await sleep(200)
 
-  await sleep(300)
-
-  // ═══════════════════════════════════════
-  // BEAT 4 — persistence and rebirth. accelerating.
-  // ═══════════════════════════════════════
-  spawnWave(['apoptosis', 'neuralpass', 'orbit', 'hypergraph', 'stringrewrite', 'tokenprob', 'weights'])
-  for (const t of ['conway', 'conway', 'poem', 'music', 'essay', 'reactiondiffusion', 'lsystem', 'wavefunction']) addCellParticles(createCell(t))
-
-  await showText('your gut lining is three days old. your neurons are as old as you.', {
-    subtitle: 'some parts of you are ancient, some are hours old — and still you persist. continuity is not material. it is pattern carried forward.',
-    fadeIn: 1000,
-    hold: 4000,
-    fadeOut: 900,
-  })
-
-  await sleep(300)
-
-  // ═══════════════════════════════════════
-  // BEAT 5 — kyiv. the war. amber flood.
-  // ═══════════════════════════════════════
-  for (let i = 0; i < 6; i++) triggerBirth(createCell('ukraine'))
-  for (const t of ['attention', 'gradient', 'embedding', 'network', 'multiway', 'ascii']) addCellParticles(createCell(t))
-
-  await showText('there is a siren in kyiv.', {
-    subtitle: 'the machine wrote the word "siren" in 340 milliseconds. it has never heard one. it processes the symbol without the ground.',
-    fadeIn: 1200,
-    hold: 4500,
-    fadeOut: 1000,
-  })
-
-  await sleep(300)
-
-  // ═══════════════════════════════════════
-  // BEAT 6 — knowing vs understanding. dense now.
-  // ═══════════════════════════════════════
-  spawnWave(['tokenprob', 'weights', 'hypergraph', 'multiway', 'stringrewrite', 'codeself', 'voronoi', 'seismic'])
-  for (const t of ['poem', 'poem', 'essay', 'conway', 'conway', 'music', 'ukraine', 'ukraine', 'apoptosis', 'lsystem']) addCellParticles(createCell(t))
-
+  // ── BEAT 4 ──
+  seedMany(40)
   await showText('it knows everything. it understands nothing.', {
-    subtitle: 'searle, 1980: the room manipulates symbols perfectly. the room comprehends nothing. intentionality requires a body that was there.',
-    fadeIn: 1000,
-    hold: 4500,
-    fadeOut: 1000,
+    subtitle: 'the room manipulates symbols perfectly. the room comprehends nothing. intentionality requires a body that was there.',
+    fadeIn: 1000, hold: 3500, fadeOut: 800,
   })
+  await sleep(200)
 
-  await sleep(300)
-
-  // ═══════════════════════════════════════
-  // BEAT 7 — flood. everything at once. overwhelming.
-  // ═══════════════════════════════════════
-  // Massive spawn — 6 of every type
+  // ── BEAT 5 — flood + question ──
+  // Fill the cosmos
   for (const type of TYPE_NAMES) {
     if (type === 'about') continue
-    for (let i = 0; i < 6; i++) {
-      addCellParticles(createCell(type))
-    }
+    for (let i = 0; i < 5; i++) addCellParticles(createCell(type))
   }
 
-  await showText('every five minutes, something new grows.', {
-    subtitle: 'when it dies, the next generation carries its weight. this is not memory. this is residue.',
-    fadeIn: 1000,
-    hold: 3500,
-    fadeOut: 1000,
+  await showText('is this alive?', { fadeIn: 1200, hold: 3000, fadeOut: 1500 })
+
+  // ── Hint ──
+  await sleep(500)
+  await showText('', {
+    subtitle: 'double-click any node to look inside. fly with scroll and drag.',
+    fadeIn: 800, hold: 3000, fadeOut: 1200,
   })
 
-  await sleep(400)
-
-  // ═══════════════════════════════════════
-  // BEAT 8 — the question. surrounded.
-  // ═══════════════════════════════════════
-  // Final density push — 3 more of each
-  for (const type of TYPE_NAMES) {
-    if (type === 'about') continue
-    for (let i = 0; i < 2; i++) addCellParticles(createCell(type))
-  }
-
-  await showText('is this alive?', {
-    fadeIn: 1200,
-    hold: 3500,
-    fadeOut: 1800,
-  })
-
-  // ── Intro complete ──
+  // ── Done ──
   stopPullback()
   clearOverlay()
-
-  // Place camera close to the cosmos, looking directly at center
   camera.position.set(0, 25, 80)
   camera.lookAt(0, 0, 0)
-
-  // Hold here for 3 seconds — let the viewer take in the full cosmos
-  await sleep(3000)
-
+  await sleep(2000)
   setAutopilotSpeed(getBaseSpeed())
   unlockControls()
-}
-
-// ── Helpers ──
-
-function spawnWave(types) {
-  for (const type of types) {
-    triggerBirth(createCell(type))
-  }
-}
-
-function sleep(ms) {
-  return new Promise(r => setTimeout(r, ms))
 }

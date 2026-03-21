@@ -151,13 +151,13 @@ export function addCellParticles(cell, opts = {}) {
     positions[idx * 3 + 1] = cell.position[1] + dy
     positions[idx * 3 + 2] = cell.position[2] + dz
 
-    // Color variation — muted, not neon. Mix toward grey for realism.
-    const colorShift = (Math.random() - 0.5) * 0.15
-    const mute = 0.7 + Math.random() * 0.3 // 70-100% of original saturation
-    // Cap at 0.75 — nothing should be white
-    colors[idx * 3]     = Math.max(0, Math.min(0.75, typeDef.color[0] * mute + colorShift))
-    colors[idx * 3 + 1] = Math.max(0, Math.min(0.75, typeDef.color[1] * mute + colorShift * 0.5))
-    colors[idx * 3 + 2] = Math.max(0, Math.min(0.75, typeDef.color[2] * mute - colorShift * 0.3))
+    // Color: desaturated, dimmer — like a real galaxy, not neon signs
+    const colorShift = (Math.random() - 0.5) * 0.1
+    const mute = 0.5 + Math.random() * 0.3 // 50-80% of original — significantly dimmer
+    // Cap at 0.6 — keep everything subtle
+    colors[idx * 3]     = Math.max(0, Math.min(0.6, typeDef.color[0] * mute + colorShift))
+    colors[idx * 3 + 1] = Math.max(0, Math.min(0.6, typeDef.color[1] * mute + colorShift * 0.5))
+    colors[idx * 3 + 2] = Math.max(0, Math.min(0.6, typeDef.color[2] * mute - colorShift * 0.3))
 
     // Size: mix of small and medium
     const sizeRoll = Math.random()
