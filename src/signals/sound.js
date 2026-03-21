@@ -1,107 +1,127 @@
-let audioCtx = null
-let droneOsc1 = null
-let droneOsc2 = null
-let droneGain = null
-let masterGain = null
-let initialized = false
+/**
+ * Sound system — heartbeat + birth/death tones.
+ * The heartbeat syncs to the breathing rhythm.
+ */
 
-// Initialize on first user interaction (browsers require user gesture)
+let audioCtx = null
+let masterGain = null
+let heartbeatTimer = null
+let initialized = false
+let heartbeatRate = 1200
+let heartbeatActive = false
+
 export function initSound() {
   if (initialized) return
   try {
     audioCtx = new (window.AudioContext || window.webkitAudioContext)()
     masterGain = audioCtx.createGain()
-    masterGain.gain.value = 0.12
+    masterGain.gain.value = 0.08
     masterGain.connect(audioCtx.destination)
-
-    // Drone: two slightly detuned sine waves = warm beating tone
-    droneGain = audioCtx.createGain()
-    droneGain.gain.value = 0
-    droneGain.connect(masterGain)
-
-    droneOsc1 = audioCtx.createOscillator()
-    droneOsc1.type = 'sine'
-    droneOsc1.frequency.value = 55 // A1
-    droneOsc1.connect(droneGain)
-    droneOsc1.start()
-
-    droneOsc2 = audioCtx.createOscillator()
-    droneOsc2.type = 'sine'
-    droneOsc2.frequency.value = 55.5 // slightly detuned — creates slow beating
-    droneOsc2.connect(droneGain)
-    droneOsc2.start()
-
     initialized = true
-  } catch(e) {}
+  } catch {}
 }
 
-// Fade drone in over 3 seconds
+function playHeartbeat() {
+  if (!audioCtx || !masterGain || !heartbeatActive) return
+  try {
+    const lub = audioCtx.createOscillator()
+    const lubGain = audioCtx.createGain()
+    lub.type = 'sine'
+    lub.frequency.value = 40
+    lubGain.gain.setValueAtTime(0.3, audioCtx.currentTime)
+    lubGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15)
+    lub.connect(lubGain)
+    lubGain.connect(masterGain)
+    lub.start(audioCtx.currentTime)
+    lub.stop(audioCtx.currentTime + 0.15)
+
+    const dub = audioCtx.createOscillator()
+    const dubGain = audioCtx.createGain()
+    dub.type = 'sine'
+    dub.frequency.value = 55
+    dubGain.gain.setValueAtTime(0.2, audioCtx.currentTime + 0.12)
+    dubGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25)
+    dub.connect(dubGain)
+    dubGain.connect(masterGain)
+    dub.start(audioCtx.currentTime + 0.12)
+    dub.stop(audioCtx.currentTime + 0.25)
+  } catch {}
+}
+
 export function startDrone() {
-  if (!droneGain || !audioCtx) return
-  droneGain.gain.cancelScheduledValues(audioCtx.currentTime)
-  droneGain.gain.setValueAtTime(droneGain.gain.value, audioCtx.currentTime)
-  droneGain.gain.linearRampToValueAtTime(0.6, audioCtx.currentTime + 3)
+  heartbeatActive = true
+  if (heartbeatTimer) clearInterval(heartbeatTimer)
+  heartbeatTimer = setInterval(playHeartbeat, heartbeatRate)
 }
 
-// Fade drone out (for reading view or air raid silence)
 export function fadeDrone(targetVolume = 0, duration = 2) {
-  if (!droneGain || !audioCtx) return
-  droneGain.gain.cancelScheduledValues(audioCtx.currentTime)
-  droneGain.gain.setValueAtTime(droneGain.gain.value, audioCtx.currentTime)
-  droneGain.gain.linearRampToValueAtTime(targetVolume, audioCtx.currentTime + duration)
+  if (!masterGain || !audioCtx) return
+  masterGain.gain.cancelScheduledValues(audioCtx.currentTime)
+  masterGain.gain.setValueAtTime(masterGain.gain.value, audioCtx.currentTime)
+  masterGain.gain.linearRampToValueAtTime(targetVolume * 0.08, audioCtx.currentTime + duration)
 }
 
-// Birth tone — brief high sine ping
+export function silenceDrone() {
+  heartbeatActive = false
+  if (heartbeatTimer) clearInterval(heartbeatTimer)
+}
+
+export function restoreDrone() {
+  heartbeatActive = true
+  if (!masterGain || !audioCtx) return
+  masterGain.gain.cancelScheduledValues(audioCtx.currentTime)
+  masterGain.gain.linearRampToValueAtTime(0.08, audioCtx.currentTime + 3)
+  if (heartbeatTimer) clearInterval(heartbeatTimer)
+  heartbeatTimer = setInterval(playHeartbeat, heartbeatRate)
+}
+
+export function updateDroneBreathing(breathPhase) {
+  const newRate = 1000 + Math.sin(breathPhase) * 200
+  if (Math.abs(newRate - heartbeatRate) > 50) {
+    heartbeatRate = newRate
+    if (heartbeatActive && heartbeatTimer) {
+      clearInterval(heartbeatTimer)
+      heartbeatTimer = setInterval(playHeartbeat, heartbeatRate)
+    }
+  }
+}
+
 export function playBirthTone() {
   if (!audioCtx || !masterGain) return
   try {
     const osc = audioCtx.createOscillator()
     const gain = audioCtx.createGain()
     osc.type = 'sine'
-    osc.frequency.value = 440 + Math.random() * 220 // A4-ish, varied
-    gain.gain.setValueAtTime(0.15, audioCtx.currentTime)
-    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.5)
+    osc.frequency.value = 440 + Math.random() * 220
+    gain.gain.setValueAtTime(0.12, audioCtx.currentTime)
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.2)
     osc.connect(gain)
     gain.connect(masterGain)
     osc.start()
-    osc.stop(audioCtx.currentTime + 1.5)
-  } catch(e) {}
+    osc.stop(audioCtx.currentTime + 1.2)
+  } catch {}
 }
 
-// Death tone — drone briefly drops in pitch
 export function playDeathTone() {
-  if (!droneOsc1 || !audioCtx) return
+  if (!audioCtx || !masterGain) return
+  heartbeatActive = false
+  if (heartbeatTimer) clearInterval(heartbeatTimer)
   try {
-    const currentFreq = droneOsc1.frequency.value
-    droneOsc1.frequency.cancelScheduledValues(audioCtx.currentTime)
-    droneOsc1.frequency.setValueAtTime(currentFreq, audioCtx.currentTime)
-    droneOsc1.frequency.linearRampToValueAtTime(currentFreq * 0.85, audioCtx.currentTime + 0.5)
-    droneOsc1.frequency.linearRampToValueAtTime(currentFreq, audioCtx.currentTime + 3)
-  } catch(e) {}
-}
-
-// Air raid: drone cuts to silence
-export function silenceDrone() {
-  fadeDrone(0, 1)
-}
-
-// Air raid clear: drone returns slowly
-export function restoreDrone() {
-  if (!droneGain || !audioCtx) return
-  droneGain.gain.cancelScheduledValues(audioCtx.currentTime)
-  droneGain.gain.setValueAtTime(droneGain.gain.value, audioCtx.currentTime)
-  droneGain.gain.linearRampToValueAtTime(0.6, audioCtx.currentTime + 5) // slow return
-}
-
-// Update drone volume with breathing (call every frame)
-export function updateDroneBreathing(breathPhase) {
-  if (!droneGain || !audioCtx) return
-  // Subtle volume modulation synced to breathing
-  const breathMod = 0.5 + Math.sin(breathPhase) * 0.1
-  // Don't override fade-in/out — only modulate if drone is playing
-  if (droneGain.gain.value > 0.1) {
-    droneGain.gain.value = breathMod
-  }
+    const osc = audioCtx.createOscillator()
+    const gain = audioCtx.createGain()
+    osc.type = 'sine'
+    osc.frequency.value = 30
+    gain.gain.setValueAtTime(0.25, audioCtx.currentTime)
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.8)
+    osc.connect(gain)
+    gain.connect(masterGain)
+    osc.start()
+    osc.stop(audioCtx.currentTime + 0.8)
+  } catch {}
+  setTimeout(() => {
+    heartbeatActive = true
+    heartbeatTimer = setInterval(playHeartbeat, heartbeatRate)
+  }, 2000)
 }
 
 export function isInitialized() { return initialized }

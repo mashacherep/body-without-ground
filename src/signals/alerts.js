@@ -1,20 +1,17 @@
 /**
  * Air raid alert checker — uses alerts.in.ua API.
- * Checks every 2 minutes. When Kyiv has an active alert,
- * the cosmos constricts, breathing holds, nodes dim.
+ * Stores all active regions for the minimap.
  */
 
 const API_KEY = import.meta.env.VITE_ALERTS_API_KEY || ''
-const CHECK_INTERVAL = 120_000 // 2 minutes
+const CHECK_INTERVAL = 120_000
 const API_URL = 'https://api.alerts.in.ua/v1/alerts/active.json'
 
 let kyivAlertActive = false
+let activeRegions = [] // all active alert regions with their data
 let listeners = []
 let checkTimer = null
 
-/**
- * Start checking for air raid alerts.
- */
 export function startAlertChecking() {
   if (!API_KEY) {
     console.warn('[alerts] No API key — alert checking disabled')
@@ -24,27 +21,13 @@ export function startAlertChecking() {
   checkTimer = setInterval(checkAlerts, CHECK_INTERVAL)
 }
 
-/**
- * Stop checking.
- */
 export function stopAlertChecking() {
   if (checkTimer) clearInterval(checkTimer)
 }
 
-/**
- * Register a callback for alert state changes.
- * @param {(active: boolean) => void} fn
- */
-export function onAlertChange(fn) {
-  listeners.push(fn)
-}
-
-/**
- * Get current alert state.
- */
-export function isAlertActive() {
-  return kyivAlertActive
-}
+export function onAlertChange(fn) { listeners.push(fn) }
+export function isAlertActive() { return kyivAlertActive }
+export function getActiveRegions() { return activeRegions }
 
 async function checkAlerts() {
   try {
@@ -52,17 +35,20 @@ async function checkAlerts() {
       headers: { 'Authorization': `Bearer ${API_KEY}` }
     })
 
-    if (!res.ok) {
-      // Fallback: time-based simulation if API fails
-      fallbackCheck()
-      return
-    }
-
+    if (!res.ok) { fallbackCheck(); return }
     const data = await res.json()
 
-    // Check if Kyiv (region uid "31") or city of Kyiv has active alert
     let kyivAlert = false
+    activeRegions = []
+
     if (Array.isArray(data)) {
+      activeRegions = data.map(a => ({
+        uid: a.location_uid,
+        title: a.location_title || '',
+        type: a.alert_type || 'air_raid',
+        started: a.started_at,
+      }))
+
       kyivAlert = data.some(a =>
         a.location_uid === '31' ||
         (a.location_title && /Київ|Kyiv/i.test(a.location_title))
@@ -70,14 +56,12 @@ async function checkAlerts() {
     }
 
     setAlertState(kyivAlert)
-  } catch (err) {
-    // Network error — fallback
+  } catch {
     fallbackCheck()
   }
 }
 
 function fallbackCheck() {
-  // Time-based simulation: higher probability at night Kyiv time
   try {
     const kyiv = new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Kiev' }))
     const h = kyiv.getHours()
