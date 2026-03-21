@@ -170,8 +170,6 @@ export async function generateContent(type, context) {
         model: GROQ_MODEL,
         max_tokens: 180,
         temperature: 0.88,
-        logprobs: true,
-        top_logprobs: 3,
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
           { role: 'user', content: userMsg },
@@ -180,8 +178,11 @@ export async function generateContent(type, context) {
     })
 
     if (!res.ok) {
+      const errBody = await res.text().catch(() => '')
+      console.error('[groq] API error:', res.status, errBody)
       throw new Error('groq ' + res.status)
     }
+    console.log('[groq] generated', type, 'successfully')
 
     const data = await res.json()
     const raw = (data.choices?.[0]?.message?.content || '').trim()
