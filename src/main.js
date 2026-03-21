@@ -132,3 +132,19 @@ window.addEventListener('resize', () => {
   camera.updateProjectionMatrix()
   renderer.setSize(innerWidth, innerHeight)
 })
+
+// Prevent WebGL context loss on focus change (Cmd+4 screenshot, tab switch)
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) {
+    renderer.setSize(innerWidth, innerHeight)
+    renderer.render(scene, camera)
+  }
+})
+
+renderer.domElement.addEventListener('webglcontextlost', (e) => {
+  e.preventDefault()
+})
+
+renderer.domElement.addEventListener('webglcontextrestored', () => {
+  renderer.setSize(innerWidth, innerHeight)
+})
