@@ -7,37 +7,31 @@ void main() {
   float dist = length(uv);
   if (dist > 0.5) discard;
 
-  // Base shape: sharp core + halo
-  float core = 1.0 - smoothstep(0.0, 0.15, dist);
-  float halo = 1.0 - smoothstep(0.0, 0.5, dist);
-  halo = pow(halo, 2.5);
+  // Organic noise-like edge — break the perfect circle
+  float noiseOffset = sin(vPhase * 17.3 + uv.x * 31.0) * cos(vPhase * 7.1 + uv.y * 23.0) * 0.06;
+  float adjustedDist = dist + noiseOffset;
 
-  // Shape variation based on particle phase
-  // Some particles get cross-flares, some get elongation, some stay round
-  float shapeType = mod(vPhase, 6.28);
+  // Soft falloff — no hard bright core, just gradual dimming
+  float glow = 1.0 - smoothstep(0.0, 0.45, adjustedDist);
+  glow = pow(glow, 1.8);
 
-  float shapeMod = 1.0;
-  if (shapeType < 2.0) {
-    // Cross/star flare — brighter along axes
-    float crossX = 1.0 - smoothstep(0.0, 0.08, abs(uv.y));
-    float crossY = 1.0 - smoothstep(0.0, 0.08, abs(uv.x));
-    shapeMod += (crossX + crossY) * 0.15;
-  } else if (shapeType < 3.5) {
-    // Slight elongation along a direction based on phase
-    float angle = vPhase * 2.0;
-    vec2 dir = vec2(cos(angle), sin(angle));
-    float elongation = abs(dot(normalize(uv + 0.001), dir));
-    shapeMod += elongation * 0.12;
-  }
-  // else: round (default)
+  // Subtle inner concentration (NOT a hard bright circle)
+  float innerGlow = 1.0 - smoothstep(0.0, 0.2, adjustedDist);
+  innerGlow = pow(innerGlow, 3.0) * 0.3; // very subtle
 
-  float brightness = (core * 0.7 + halo * 0.3) * shapeMod;
+  float brightness = glow + innerGlow;
 
-  // Core is white-hot, halo is tinted
-  vec3 col = mix(vColor, vec3(1.0), core * 0.4);
+  // Color stays mostly the type color — only the very center gets slightly warmer
+  // NO white-washing — keep the natural color
+  vec3 col = vColor;
+  col = mix(col, col * 1.15, innerGlow); // slightly brighter center, same hue
 
-  // Breathing luminosity
-  float breathGlow = 1.0 + sin(vAlpha * 6.28 + vColor.r * 3.14) * 0.08;
+  // Subtle phase-based luminosity variation (organic shimmer)
+  float shimmer = 1.0 + sin(vPhase * 11.0 + vColor.g * 5.0) * 0.05;
 
-  gl_FragColor = vec4(col * breathGlow, vAlpha * brightness);
+  // Desaturate slightly for realism — pure saturated colors look neon
+  float luma = dot(col, vec3(0.299, 0.587, 0.114));
+  col = mix(col, vec3(luma), 0.15); // 15% desaturation
+
+  gl_FragColor = vec4(col * shimmer, vAlpha * brightness * 0.85);
 }

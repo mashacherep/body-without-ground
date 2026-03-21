@@ -42,16 +42,16 @@ function randomPosition(type) {
   // Each type has a loose "home" direction but nodes scatter widely
   // This creates organic clustering without a rigid ring
   const homeAngle = (idx / types.length) * Math.PI * 2
-  const homeRadius = 40 + (idx % 4) * 15
+  const homeRadius = 50 + (idx % 5) * 20
 
-  // Scatter significantly from home — nodes overlap between types
-  const angle = homeAngle + (Math.random() - 0.5) * 1.8 // wide angular spread
-  const radius = homeRadius * (0.3 + Math.random() * 1.2) // 30% to 150% of home radius
-  const verticalSpread = 60 // tall, not flat
+  // Wide scatter — cosmos fills a large volume
+  const angle = homeAngle + (Math.random() - 0.5) * 2.2
+  const radius = homeRadius * (0.2 + Math.random() * 1.5)
+  const verticalSpread = 80
 
   return [
-    Math.cos(angle) * radius + (Math.random() - 0.5) * 40,
-    (Math.random() - 0.5) * verticalSpread, // full 3D volume
-    Math.sin(angle) * radius + (Math.random() - 0.5) * 40,
+    Math.cos(angle) * radius + (Math.random() - 0.5) * 50,
+    (Math.random() - 0.5) * verticalSpread,
+    Math.sin(angle) * radius + (Math.random() - 0.5) * 50,
   ]
 }

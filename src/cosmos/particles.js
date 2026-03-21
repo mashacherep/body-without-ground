@@ -151,23 +151,25 @@ export function addCellParticles(cell, opts = {}) {
     positions[idx * 3 + 1] = cell.position[1] + dy
     positions[idx * 3 + 2] = cell.position[2] + dz
 
-    // Color variation within cluster — slight hue shift per particle
-    const colorShift = (Math.random() - 0.5) * 0.12
-    colors[idx * 3]     = Math.max(0, Math.min(1, typeDef.color[0] + colorShift))
-    colors[idx * 3 + 1] = Math.max(0, Math.min(1, typeDef.color[1] + colorShift * 0.5))
-    colors[idx * 3 + 2] = Math.max(0, Math.min(1, typeDef.color[2] - colorShift * 0.3))
+    // Color variation — muted, not neon. Mix toward grey for realism.
+    const colorShift = (Math.random() - 0.5) * 0.15
+    const mute = 0.7 + Math.random() * 0.3 // 70-100% of original saturation
+    colors[idx * 3]     = Math.max(0, Math.min(1, typeDef.color[0] * mute + colorShift))
+    colors[idx * 3 + 1] = Math.max(0, Math.min(1, typeDef.color[1] * mute + colorShift * 0.5))
+    colors[idx * 3 + 2] = Math.max(0, Math.min(1, typeDef.color[2] * mute - colorShift * 0.3))
 
-    // Dramatic size variation — a few very large "core" particles, many tiny ones
+    // Size variation — wide range, mostly small
     const sizeRoll = Math.random()
-    if (sizeRoll > 0.95) {
-      sizes[idx] = 4.0 + Math.random() * 4.0 // rare large particles
-    } else if (sizeRoll > 0.7) {
-      sizes[idx] = 2.0 + Math.random() * 2.0 // medium
+    if (sizeRoll > 0.97) {
+      sizes[idx] = 3.5 + Math.random() * 3.0 // rare large
+    } else if (sizeRoll > 0.75) {
+      sizes[idx] = 1.5 + Math.random() * 2.0 // medium
     } else {
-      sizes[idx] = 0.5 + Math.random() * 1.5 // many tiny ones
+      sizes[idx] = 0.4 + Math.random() * 1.2 // many tiny
     }
 
-    alphas[idx] = 0.4 + Math.random() * 0.5
+    // Lower alpha range — subtler, not glowing neon
+    alphas[idx] = 0.25 + Math.random() * 0.45
     phases[idx] = Math.random() * Math.PI * 2
   }
 

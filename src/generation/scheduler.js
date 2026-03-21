@@ -240,11 +240,22 @@ function deathCheck() {
 export function startScheduler() {
   initDeviceSignals()
 
+  // Accelerated growth for first 10 minutes — birth every 45 seconds
+  // Then settle to normal 4-minute cycle
+  const FAST_BIRTH_INTERVAL = 45_000
+  const FAST_PHASE_DURATION = 600_000 // 10 minutes
+
   // First birth after a short delay
   setTimeout(() => birthCell(), 5000)
 
-  // Birth: every 4 minutes
-  birthTimer = setInterval(() => birthCell(), BIRTH_INTERVAL)
+  // Start fast
+  birthTimer = setInterval(() => birthCell(), FAST_BIRTH_INTERVAL)
+
+  // After 10 minutes, slow down to normal
+  setTimeout(() => {
+    clearInterval(birthTimer)
+    birthTimer = setInterval(() => birthCell(), BIRTH_INTERVAL)
+  }, FAST_PHASE_DURATION)
 
   // Death: check every minute
   deathTimer = setInterval(() => deathCheck(), DEATH_CHECK_INTERVAL)

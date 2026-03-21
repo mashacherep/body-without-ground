@@ -165,10 +165,10 @@ export async function runIntro(camera) {
   // ═══════════════════════════════════════
   // BEAT 7 — flood. everything at once. overwhelming.
   // ═══════════════════════════════════════
-  // Massive spawn — 4+ of every type
+  // Massive spawn — 6 of every type
   for (const type of TYPE_NAMES) {
     if (type === 'about') continue
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 6; i++) {
       addCellParticles(createCell(type))
     }
   }
@@ -185,7 +185,7 @@ export async function runIntro(camera) {
   // ═══════════════════════════════════════
   // BEAT 8 — the question. surrounded.
   // ═══════════════════════════════════════
-  // Final density push
+  // Final density push — 3 more of each
   for (const type of TYPE_NAMES) {
     if (type === 'about') continue
     for (let i = 0; i < 2; i++) addCellParticles(createCell(type))
