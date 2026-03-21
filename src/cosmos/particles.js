@@ -3,6 +3,11 @@ import vertexShader from '../shaders/particle.vert?raw'
 import fragmentShader from '../shaders/particle.frag?raw'
 import { getAliveCells } from '../state/cells.js'
 import { CELL_TYPES } from '../generation/types.js'
+import {
+  behaviorConway, behaviorUkraine, behaviorTokenprob, behaviorAttention,
+  behaviorGradient, behaviorApoptosis, behaviorWavefunction, behaviorSeismic,
+  behaviorEmbedding, behaviorReactionDiffusion
+} from './behaviors.js'
 
 const MAX_PARTICLES = 5000
 

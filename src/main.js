@@ -1,7 +1,9 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
-import { createCell, getCells } from './state/cells.js'
-import { initParticles, addCellParticles, updateParticles } from './cosmos/particles.js'
+import { createCell, getCells, getAliveCells, killCell } from './state/cells.js'
+import { initParticles, addCellParticles, updateParticles, getBuffers, getCellParticleMap } from './cosmos/particles.js'
+import { triggerBirth, updateBirths } from './cosmos/birth.js'
+import { triggerDeath, updateDeaths } from './cosmos/death.js'
 import { initAttractors, updateAttractors } from './cosmos/attractors.js'
 import { initFilaments, updateFilaments } from './cosmos/filaments.js'
 import { updateBreathing } from './cosmos/breathing.js'
@@ -65,6 +67,10 @@ function animate() {
   const breathPhase = updateBreathing(dt, 0, 1)
 
   updateParticles(elapsed, breathPhase)
+  const bufs = getBuffers()
+  const cpm = getCellParticleMap()
+  updateBirths(bufs.positions, bufs.alphas, cpm)
+  updateDeaths(bufs.positions, bufs.alphas, bufs.colors, cpm)
   updateAttractors(0, 1)
   updateFilaments()
   controls.update()
