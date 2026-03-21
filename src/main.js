@@ -6,6 +6,7 @@ import { triggerDeath, updateDeaths } from './cosmos/death.js'
 import { initAttractors, updateAttractors } from './cosmos/attractors.js'
 import { initFilaments, updateFilaments } from './cosmos/filaments.js'
 import { initTendrils, updateTendrils } from './cosmos/tendrils.js'
+import { initCarriers, updateCarriers } from './cosmos/carriers.js'
 import { updateBreathing } from './cosmos/breathing.js'
 import { initCameraSystem, updateCameraSystem } from './camera/controls.js'
 import { updateReadingView, isInReadingView, enterReadingView, exitReadingView } from './camera/transitions.js'
@@ -47,6 +48,7 @@ initParticles(scene)
 initAttractors(scene)
 initFilaments(scene)
 initTendrils(scene)
+initCarriers(scene)
 
 // Init HUD elements
 initWhisper()
@@ -164,6 +166,7 @@ function animate() {
   updateAttractors(0, 1)
   updateFilaments(elapsed)
   updateTendrils(elapsed)
+  updateCarriers(elapsed)
 
   // Camera: reading view takes priority, then the camera system handles autopilot/viewer
   if (!updateReadingView(dt, camera)) {

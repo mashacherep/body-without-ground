@@ -15,6 +15,7 @@ import { extractWords, markovSeed, recentContext } from './markov.js'
 import { interruptDriftTo, interruptPullBack } from '../camera/controls.js'
 import { showText } from '../narrative/overlay.js'
 import { playBirthTone, playDeathTone } from '../signals/sound.js'
+import { spawnFromDeath } from '../cosmos/carriers.js'
 
 const BIRTH_INTERVAL = 240_000       // 4 minutes
 const DEATH_CHECK_INTERVAL = 60_000  // check every minute
@@ -209,6 +210,7 @@ function deathCheck() {
       killCell(cell.id)
       triggerDeath(cell, cpm)
       playDeathTone()
+      spawnFromDeath(cell) // carriers scatter from the dead — carrying fragments forward
       totalDeaths++
 
       // Camera pulls back to witness the death
