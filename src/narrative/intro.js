@@ -14,12 +14,12 @@ let pullbackCamera = null
 
 const CAMERA_PATH = [
   [5, 3, 15],      // inside the cluster, intimate
-  [15, 6, 30],     // pulling back, first nodes visible
-  [30, 12, 55],    // more visible, ukraine nodes igniting
-  [50, 20, 80],    // wide, seeing connections form
-  [40, 35, 110],   // arc upward
-  [10, 45, 140],   // nearly centered
-  [0, 50, 150],    // final: facing into the cosmos
+  [12, 6, 25],     // pulling back, first nodes visible
+  [25, 10, 40],    // connections forming
+  [35, 16, 55],    // network emerging
+  [20, 22, 68],    // arc upward
+  [5, 25, 78],     // centering
+  [0, 25, 80],     // final: close, facing into the cosmos
 ]
 
 function startPullback(camera) {
@@ -201,13 +201,12 @@ export async function runIntro(camera) {
   stopPullback()
   clearOverlay()
 
-  // Hold at a good viewing angle facing the cosmos center
-  camera.position.set(0, 40, 130)
+  // Place camera close to the cosmos, looking directly at center
+  camera.position.set(0, 25, 80)
   camera.lookAt(0, 0, 0)
 
-  // Let the camera sit here for 2 seconds so the viewer sees the full cosmos
-  // before autopilot starts drifting
-  await sleep(2000)
+  // Hold here for 3 seconds — let the viewer take in the full cosmos
+  await sleep(3000)
 
   setAutopilotSpeed(getBaseSpeed())
   unlockControls()
