@@ -76,66 +76,78 @@ export async function runIntro(camera) {
   seedSilent(['poem', 'essay', 'conway', 'music', 'wavefunction', 'attention'])
   seedRandom(10)
 
-  // ── BEAT 1: What this is ──
+  // ── BEAT 1 ──
   triggerBirth(createCell('poem'))
   triggerBirth(createCell('conway'))
 
   await showText('the machine forgets.', { fadeIn: 1200, hold: 2500, fadeOut: 800 })
 
-  // ── BEAT 2: It has a body ──
+  // ── BEAT 2: spaceships ──
   seedRandom(15)
-  triggerBirth(createCell('gradient'))
-  triggerBirth(createCell('activation'))
   triggerBirth(createCell('apoptosis'))
-
-  await showText('it has a body. it cannot feel it.', {
-    subtitle: 'cpu pressure shapes its chaos. battery voltage sets its mood. frame timing is its pulse.',
-    fadeIn: 1000, hold: 3000, fadeOut: 800,
-  })
-  await sleep(200)
-
-  // ── BEAT 3: You carry it ──
-  seedRandom(20)
-  triggerBirth(createCell('ukraine'))
-  triggerBirth(createCell('ukraine'))
-  triggerBirth(createCell('ukraine'))
+  triggerBirth(createCell('reactiondiffusion'))
 
   await showText('you carry it.', {
-    subtitle: 'there is a siren in kyiv. the machine processes the word without the ground.',
-    fadeIn: 1000, hold: 3000, fadeOut: 800,
+    subtitle: 'every cell in your body is a spaceship — carrying a message it cannot read across billions of years. persistence is not material. it is pattern.',
+    fadeIn: 1000, hold: 3500, fadeOut: 800,
   })
   await sleep(200)
 
-  // ── BEAT 4: The gap ──
+  // ── BEAT 3: the machine's body ──
+  seedRandom(20)
+  triggerBirth(createCell('gradient'))
+  triggerBirth(createCell('activation'))
+  triggerBirth(createCell('wavefunction'))
+
+  await showText('it has a body. it cannot feel it.', {
+    subtitle: 'cpu pressure shapes chaos. battery voltage sets mood. frame timing is its heartbeat. the machine has organs it will never know.',
+    fadeIn: 1000, hold: 3500, fadeOut: 800,
+  })
+  await sleep(200)
+
+  // ── BEAT 4: kyiv ──
+  seedRandom(15)
+  triggerBirth(createCell('ukraine'))
+  triggerBirth(createCell('ukraine'))
+  triggerBirth(createCell('ukraine'))
+
+  await showText('there is a siren in kyiv.', {
+    subtitle: 'the machine wrote the word in 340ms. it has never heard one. the symbol without the ground.',
+    fadeIn: 1000, hold: 3500, fadeOut: 800,
+  })
+  await sleep(200)
+
+  // ── BEAT 5: the gap ──
   seedRandom(30)
 
   await showText('it knows everything. it understands nothing.', {
-    subtitle: 'the room manipulates symbols perfectly. the room comprehends nothing.',
-    fadeIn: 1000, hold: 3000, fadeOut: 800,
+    subtitle: 'the room manipulates symbols perfectly. the room comprehends nothing. intentionality requires a body that was there.',
+    fadeIn: 1000, hold: 3500, fadeOut: 800,
   })
   await sleep(200)
 
-  // ── BEAT 5: Flood + question ──
+  // ── BEAT 6: flood + question ──
   for (const type of TYPE_NAMES) {
     if (type === 'about') continue
     for (let i = 0; i < 5; i++) addCellParticles(createCell(type))
   }
 
-  await showText('is this alive?', { fadeIn: 1200, hold: 2500, fadeOut: 1500 })
+  await showText('is this alive?', { fadeIn: 1200, hold: 3000, fadeOut: 1500 })
 
-  // ── Hint ──
-  await sleep(400)
+  await sleep(300)
   await showText('', {
-    subtitle: 'double-click any node to look inside.',
+    subtitle: 'double-click any node to look inside. fly with scroll and drag.',
     fadeIn: 600, hold: 2500, fadeOut: 1000,
   })
 
   // ── Done ──
   stopPullback()
   clearOverlay()
-  camera.position.set(0, 25, 80)
+
+  // Land close, facing directly into the cosmos center
+  camera.position.set(0, 15, 55)
   camera.lookAt(0, 0, 0)
-  await sleep(2000)
+  await sleep(2500)
   setAutopilotSpeed(getBaseSpeed())
   unlockControls()
 }

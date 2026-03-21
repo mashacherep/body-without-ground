@@ -71,7 +71,7 @@ export function initParticles(scene) {
     colors[idx * 3 + 2] = 0.6 + Math.random() * 0.15
 
     sizes[idx] = 0.8 + Math.random() * 1.5
-    alphas[idx] = 0.02 + Math.random() * 0.05 // very subtle
+    alphas[idx] = 0.04 + Math.random() * 0.08
     phases[idx] = Math.random() * Math.PI * 2
   }
   particleCount += Math.min(DUST_COUNT, MAX_PARTICLES - particleCount)
@@ -151,13 +151,12 @@ export function addCellParticles(cell, opts = {}) {
     positions[idx * 3 + 1] = cell.position[1] + dy
     positions[idx * 3 + 2] = cell.position[2] + dz
 
-    // Color: desaturated, dimmer — like a real galaxy, not neon signs
+    // Color: vibrant but not neon. Slight variation per particle.
     const colorShift = (Math.random() - 0.5) * 0.1
-    const mute = 0.5 + Math.random() * 0.3 // 50-80% of original — significantly dimmer
-    // Cap at 0.6 — keep everything subtle
-    colors[idx * 3]     = Math.max(0, Math.min(0.6, typeDef.color[0] * mute + colorShift))
-    colors[idx * 3 + 1] = Math.max(0, Math.min(0.6, typeDef.color[1] * mute + colorShift * 0.5))
-    colors[idx * 3 + 2] = Math.max(0, Math.min(0.6, typeDef.color[2] * mute - colorShift * 0.3))
+    const mute = 0.8 + Math.random() * 0.2
+    colors[idx * 3]     = Math.max(0, Math.min(0.9, typeDef.color[0] * mute + colorShift))
+    colors[idx * 3 + 1] = Math.max(0, Math.min(0.9, typeDef.color[1] * mute + colorShift * 0.5))
+    colors[idx * 3 + 2] = Math.max(0, Math.min(0.9, typeDef.color[2] * mute - colorShift * 0.3))
 
     // Size: mix of small and medium
     const sizeRoll = Math.random()
@@ -169,7 +168,7 @@ export function addCellParticles(cell, opts = {}) {
       sizes[idx] = 0.6 + Math.random() * 1.0 // small
     }
 
-    alphas[idx] = 0.3 + Math.random() * 0.5
+    alphas[idx] = 0.5 + Math.random() * 0.5
     phases[idx] = Math.random() * Math.PI * 2
   }
 

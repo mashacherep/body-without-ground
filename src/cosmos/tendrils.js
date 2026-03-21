@@ -90,8 +90,8 @@ export function updateTendrils(time) {
       tendrilPositions[base + 5] = ez + perpZ
 
       // Color: bright at root, fades at tip
-      const alpha = 0.15 + pulse * 0.12
-      const mute = 0.75 + Math.random() * 0.25
+      const alpha = 0.25 + pulse * 0.15
+      const mute = 0.85 + Math.random() * 0.15
 
       const cBase = tendrilCount * 8
       tendrilColors[cBase]     = color[0] * mute

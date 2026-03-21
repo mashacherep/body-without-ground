@@ -44,7 +44,7 @@ export function updateFilaments(time) {
         const sameType = a.type === b.type
         const basePulse = 0.5 + 0.5 * Math.sin(time * 1.5 + i * 0.7 + j * 1.3)
         const flowPulse = 0.5 + 0.5 * Math.sin(time * 3 + i * 2.1 + j * 0.9)
-        const baseAlpha = (1 - dist / maxDist) * (sameType ? 0.3 + basePulse * 0.2 : 0.05 + basePulse * 0.05)
+        const baseAlpha = (1 - dist / maxDist) * (sameType ? 0.4 + basePulse * 0.25 : 0.1 + basePulse * 0.08)
         const alpha = baseAlpha
         const alphaEnd = baseAlpha * (0.3 + flowPulse * 0.7)
         const colorA = CELL_TYPES[a.type].color

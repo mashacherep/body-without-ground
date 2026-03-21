@@ -50,8 +50,8 @@ function generateSpline() {
       const [cx, cy, cz] = cell.position
       // Offset from the cell: we observe from a distance, not inside the cluster
       const offsetAngle = Math.random() * Math.PI * 2
-      const offsetDist = 40 + Math.random() * 60
-      const offsetY = 20 + Math.random() * 40
+      const offsetDist = 20 + Math.random() * 35
+      const offsetY = 10 + Math.random() * 25
       points.push(new THREE.Vector3(
         cx + Math.cos(offsetAngle) * offsetDist,
         cy + offsetY,
@@ -63,9 +63,9 @@ function generateSpline() {
     for (let i = 0; i < 3; i++) {
       const angle = Math.random() * Math.PI * 2
       points.push(new THREE.Vector3(
-        Math.cos(angle) * 180,
-        40 + Math.random() * 50,
-        Math.sin(angle) * 180,
+        Math.cos(angle) * 80,
+        15 + Math.random() * 25,
+        Math.sin(angle) * 80,
       ))
     }
   }
