@@ -28,7 +28,7 @@ export function initFilaments(scene) {
 export function updateFilaments(time) {
   const cells = getAliveCells()
   let connIdx = 0
-  const maxDist = 80
+  const maxDist = 45
   const maxCheck = Math.min(cells.length, 150)
 
   for (let i = 0; i < maxCheck && connIdx < MAX_CONNECTIONS; i++) {
@@ -93,7 +93,7 @@ export function updateFilaments(time) {
     for (let k = 0; k < Math.min(2, nearest.length) && connIdx < MAX_CONNECTIONS; k++) {
       const b = cells[nearest[k].idx]
       const dist = nearest[k].dist
-      const alpha = Math.max(0.03, (1 - dist / 200) * 0.12)
+      const alpha = Math.max(0.02, (1 - dist / 120) * 0.06)
       const colorA = CELL_TYPES[a.type].color
       const colorB = CELL_TYPES[b.type].color
       const color = a.type === b.type ? colorA : [

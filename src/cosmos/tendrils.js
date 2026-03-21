@@ -58,8 +58,8 @@ export function updateTendrils(time) {
       const dirY = Math.sin(phi) * Math.sin(theta) * 0.6 // flatten slightly
       const dirZ = Math.cos(phi)
 
-      // Length varies — some short (dendrites), some long (axons)
-      const baseLen = 3 + Math.sin(seed * 3.1) * 4
+      // Short wispy tendrils — not long spikes
+      const baseLen = 1.2 + Math.sin(seed * 3.1) * 1.5
       // Animate: tendrils slowly wave and pulse
       const wave = Math.sin(time * 0.5 + seed * 0.7) * 0.3
       const pulse = 0.8 + Math.sin(time * 1.2 + seed * 1.1) * 0.2
@@ -78,8 +78,8 @@ export function updateTendrils(time) {
 
       // Slight curve — offset the end point perpendicular to the direction
       const curveSeed = Math.sin(seed * 5.7 + time * 0.3)
-      const perpX = -dirZ * curveSeed * 1.5
-      const perpZ = dirX * curveSeed * 1.5
+      const perpX = -dirZ * curveSeed * 0.5
+      const perpZ = dirX * curveSeed * 0.5
 
       const base = tendrilCount * 6
       tendrilPositions[base]     = sx
