@@ -28,8 +28,10 @@ export function initCameraSystem(cam, domElement) {
   orbit = new OrbitControls(camera, domElement)
   orbit.enableDamping = true
   orbit.dampingFactor = 0.05
-  orbit.maxDistance = 800
-  orbit.minDistance = 10
+  orbit.maxDistance = 1200
+  orbit.minDistance = 1
+  orbit.zoomSpeed = 1.2
+  orbit.rotateSpeed = 0.6
   orbit.enabled = false // autopilot is in charge at start
 
   // Detect user interaction to switch to viewer mode

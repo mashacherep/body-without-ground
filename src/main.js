@@ -16,7 +16,7 @@ import { stopActiveViz } from './reading/viz.js'
 // Scene
 const scene = new THREE.Scene()
 scene.background = new THREE.Color(0x050508)
-scene.fog = new THREE.FogExp2(0x050508, 0.003)
+scene.fog = new THREE.FogExp2(0x050508, 0.002)
 
 // Camera
 const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 5000)
