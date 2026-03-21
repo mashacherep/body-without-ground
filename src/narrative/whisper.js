@@ -15,7 +15,7 @@ let typeEl = null
 let textEl = null
 let currentCellId = null
 let lastCheckTime = 0
-const CHECK_INTERVAL = 2000 // check every 2 seconds
+const CHECK_INTERVAL = 5000 // check every 5 seconds
 
 // Seed content for cells that don't have Groq-generated content yet
 const SEED_CONTENT = {
