@@ -171,6 +171,11 @@ export async function runIntro(camera) {
   // ---- Intro complete ----
   stopPullback()
   clearOverlay()
+
+  // Position camera at a good viewing distance before handing off to autopilot
+  camera.position.set(0, 60, 180)
+  camera.lookAt(0, 0, 0)
+
   setAutopilotSpeed(getBaseSpeed())
   unlockControls()
 }

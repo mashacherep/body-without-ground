@@ -59,13 +59,13 @@ function generateSpline() {
       ))
     }
 
-    // Add a couple of wide-orbit scenic points
-    for (let i = 0; i < 2; i++) {
+    // Add wide-orbit scenic points at varying altitudes
+    for (let i = 0; i < 3; i++) {
       const angle = Math.random() * Math.PI * 2
       points.push(new THREE.Vector3(
-        Math.cos(angle) * 200,
-        50 + Math.random() * 60,
-        Math.sin(angle) * 200,
+        Math.cos(angle) * 180,
+        40 + Math.random() * 50,
+        Math.sin(angle) * 180,
       ))
     }
   }

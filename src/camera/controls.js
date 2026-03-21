@@ -82,7 +82,7 @@ export function updateCameraSystem(dt) {
   if (mode === 'autopilot') {
     const result = updateAutopilot(dt)
     if (result) {
-      camera.position.lerp(result.position, 0.06)
+      camera.position.lerp(result.position, 0.12)
       camera.lookAt(result.lookAt)
     }
   } else if (mode === 'viewer') {
