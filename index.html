@@ -46,6 +46,70 @@
     opacity: 1;
   }
 
+  /* Whisper panel — ambient text from nearby cells */
+  #whisper-panel {
+    position: fixed;
+    bottom: 24px;
+    left: 24px;
+    max-width: 380px;
+    z-index: 8;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 1.5s ease-in-out;
+  }
+  #whisper-panel.visible { opacity: 1; }
+  #whisper-type {
+    font-family: 'Courier New', monospace;
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.2);
+    margin-bottom: 6px;
+  }
+  #whisper-text {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 14px;
+    line-height: 1.65;
+    color: rgba(255,255,255,0.45);
+    font-style: italic;
+  }
+  #whisper-panel.type-ukraine #whisper-text {
+    color: rgba(228,172,68,0.55);
+    font-style: normal;
+  }
+  #whisper-panel.type-essay #whisper-text {
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    color: rgba(175,148,240,0.45);
+    font-style: normal;
+  }
+
+  /* Kyiv/NYC clock HUD */
+  #clock-hud {
+    position: fixed;
+    top: 16px;
+    right: 20px;
+    z-index: 8;
+    pointer-events: none;
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-align: right;
+    line-height: 1.8;
+  }
+  #kyiv-clock { color: rgba(220,165,55,0.5); }
+  #nyc-clock { color: rgba(120,165,220,0.4); }
+  #alert-badge {
+    color: rgba(255,80,60,0.7);
+    font-size: 8px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    display: none;
+    animation: alertPulse 1.5s ease-in-out infinite;
+  }
+  #alert-badge.active { display: block; }
+  @keyframes alertPulse { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
+
   #reading-overlay {
     position: fixed;
     inset: 0;
@@ -181,6 +245,19 @@
   <div id="narrative-heading"></div>
   <div id="narrative-subtitle"></div>
 </div>
+<!-- Whisper panel — shows text from nearby cells -->
+<div id="whisper-panel">
+  <div id="whisper-type"></div>
+  <div id="whisper-text"></div>
+</div>
+
+<!-- Clock HUD -->
+<div id="clock-hud">
+  <div id="kyiv-clock">KYIV --:--</div>
+  <div id="nyc-clock">NYC --:--</div>
+  <div id="alert-badge">AIR RAID ALERT — KYIV</div>
+</div>
+
 <!-- Reading view overlay -->
 <div id="reading-overlay" aria-live="polite">
   <div id="reading-panel">

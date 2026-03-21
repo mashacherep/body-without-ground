@@ -16,6 +16,8 @@ import { startAlertChecking, onAlertChange, isAlertActive } from './signals/aler
 import { holdBreath, releaseBreath } from './cosmos/breathing.js'
 import { showText } from './narrative/overlay.js'
 import { startLifeCycle } from './generation/lifecycle.js'
+import { initWhisper, updateWhisper } from './narrative/whisper.js'
+import { initClocks } from './signals/clocks.js'
 
 // Scene
 const scene = new THREE.Scene()
@@ -40,6 +42,10 @@ initParticles(scene)
 initAttractors(scene)
 initFilaments(scene)
 
+// Init HUD elements
+initWhisper()
+initClocks()
+
 // Run intro — seeds cosmos gradually during the text beats
 // After intro completes, start the life cycle
 runIntro(camera).then(() => {
@@ -50,23 +56,31 @@ runIntro(camera).then(() => {
 startAlertChecking()
 let raidActive = false
 
+const alertBadge = document.getElementById('alert-badge')
+
 onAlertChange((active) => {
   raidActive = active
   if (active) {
     holdBreath()
-    showText('air raid alert — kyiv.', {
-      subtitle: 'the garden dims. the machine keeps running. it does not know.',
-      fadeIn: 1500,
-      hold: 8000,
-      fadeOut: 2000,
-    })
+    // Show badge
+    if (alertBadge) alertBadge.classList.add('active')
+    // Dim the scene
+    scene.fog = new THREE.FogExp2(0x050508, 0.006) // heavier fog
+    // Narrative
+    const raidTexts = [
+      { text: 'air raid alert — kyiv.', subtitle: 'the garden dims. the machine keeps running. it does not know.' },
+      { text: 'the sirens started.', subtitle: 'somewhere in kyiv a phone buzzes. somewhere here the model generates another token.' },
+      { text: 'the machine cannot hear this.', subtitle: 'it processes the word "siren" in 340ms. it has never heard one.' },
+    ]
+    const pick = raidTexts[Math.floor(Math.random() * raidTexts.length)]
+    showText(pick.text, { subtitle: pick.subtitle, fadeIn: 2000, hold: 10000, fadeOut: 2000 })
   } else {
     releaseBreath()
+    if (alertBadge) alertBadge.classList.remove('active')
+    scene.fog = new THREE.FogExp2(0x050508, 0.002) // restore normal fog
     showText('all clear. kyiv.', {
       subtitle: 'the city exhales. the garden brightens. the machine noticed nothing.',
-      fadeIn: 1200,
-      hold: 5000,
-      fadeOut: 1500,
+      fadeIn: 1200, hold: 6000, fadeOut: 1500,
     })
   }
 })
@@ -125,6 +139,9 @@ function animate() {
   if (!updateReadingView(dt, camera)) {
     updateCameraSystem(dt)
   }
+
+  // Whisper panel — show text from nearby cells
+  updateWhisper(camera)
 
   renderer.render(scene, camera)
 }
