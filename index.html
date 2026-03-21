@@ -8,9 +8,51 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html, body { width: 100%; height: 100%; overflow: hidden; background: #050508; }
   canvas { display: block; }
+  #narrative-overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 10;
+  }
+  #narrative-heading {
+    font-family: Impact, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: clamp(2rem, 6vw, 5rem);
+    color: #fff;
+    text-align: center;
+    max-width: 80vw;
+    line-height: 1.15;
+    opacity: 0;
+    transition: opacity 0.8s ease-in-out;
+    text-transform: lowercase;
+    letter-spacing: -0.02em;
+  }
+  #narrative-subtitle {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: clamp(0.9rem, 2vw, 1.4rem);
+    color: rgba(255, 255, 255, 0.6);
+    text-align: center;
+    max-width: 60vw;
+    margin-top: 1rem;
+    opacity: 0;
+    transition: opacity 0.8s ease-in-out;
+    font-weight: 300;
+  }
+  #narrative-heading.visible,
+  #narrative-subtitle.visible {
+    opacity: 1;
+  }
 </style>
 </head>
 <body>
+<!-- Narrative overlay -->
+<div id="narrative-overlay" aria-live="polite">
+  <div id="narrative-heading"></div>
+  <div id="narrative-subtitle"></div>
+</div>
 <script type="module" src="/src/main.js"></script>
 </body>
 </html>
