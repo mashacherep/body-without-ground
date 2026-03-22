@@ -5,7 +5,11 @@
 
 const API_KEY = import.meta.env.VITE_ALERTS_API_KEY || ''
 const CHECK_INTERVAL = 120_000
-const API_URL = 'https://api.alerts.in.ua/v1/alerts/active.json'
+
+const IS_LOCAL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+const API_URL = IS_LOCAL
+  ? 'https://api.alerts.in.ua/v1/alerts/active.json'
+  : '/api/alerts'
 
 let kyivAlertActive = false
 let activeRegions = [] // all active alert regions with their data
@@ -31,9 +35,8 @@ export function getActiveRegions() { return activeRegions }
 
 async function checkAlerts() {
   try {
-    const res = await fetch(API_URL, {
-      headers: { 'Authorization': `Bearer ${API_KEY}` }
-    })
+    const headers = IS_LOCAL ? { 'Authorization': `Bearer ${API_KEY}` } : {}
+    const res = await fetch(API_URL, { headers })
 
     if (!res.ok) { fallbackCheck(); return }
     const data = await res.json()

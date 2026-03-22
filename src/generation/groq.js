@@ -6,7 +6,11 @@
 
 const GROQ_KEY = import.meta.env.VITE_GROQ_KEY || ''
 const GROQ_MODEL = 'llama-3.3-70b-versatile'
-const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions'
+
+const IS_LOCAL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+const GROQ_URL = IS_LOCAL
+  ? 'https://api.groq.com/openai/v1/chat/completions'
+  : '/api/groq'
 
 // Only these types hit the API
 const API_TYPES = new Set(['poem', 'essay', 'ukraine', 'ascii'])
@@ -26,6 +30,8 @@ export function isApiType(type) {
 }
 
 export function hasGroqKey() {
+  // When deployed, the proxy handles the key — no client-side key needed
+  if (!IS_LOCAL) return true
   const has = GROQ_KEY.length > 10
   if (!has) console.warn('[groq] No API key found — using seed content')
   return has
@@ -159,12 +165,12 @@ export async function generateContent(type, context) {
   const userMsg = buildUserPrompt(type, context)
 
   try {
+    const headers = { 'Content-Type': 'application/json' }
+    if (IS_LOCAL) headers['Authorization'] = 'Bearer ' + GROQ_KEY
+
     const res = await fetch(GROQ_URL, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + GROQ_KEY,
-      },
+      headers,
       body: JSON.stringify({
         model: GROQ_MODEL,
         max_tokens: 180,
