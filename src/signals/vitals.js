@@ -43,14 +43,13 @@ function updateVitals() {
   const mem = navigator.deviceMemory || '?'
 
   vitalsEl.innerHTML = [
-    `uptime ${upMin}m`,
-    `battery ${bat}% ${battery.charging ? 'charging' : 'discharging'}`,
-    `cells ${alive} alive · ${deaths} dead`,
-    `generations ${gens}`,
-    `markov ${words} words`,
-    `lorenz \u03C1 = ${lorenz.rho.toFixed(1)}`,
-    `memory ${mem}GB`,
-  ].join('<br>')
+    `<span>uptime ${upMin}m</span>`,
+    `<span>battery ${bat}%</span>`,
+    `<span>cells ${alive} · ${deaths} dead</span>`,
+    `<span>gen ${gens}</span>`,
+    `<span>markov ${words}</span>`,
+    `<span>\u03C1 ${lorenz.rho.toFixed(1)}</span>`,
+  ].join('')
 
   // Update assumptions counter
   const assumptions = getAllAssumptions()

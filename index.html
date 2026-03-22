@@ -51,11 +51,13 @@
   }
 
   /* Whisper panel — ambient text from nearby cells */
+  /* Whisper panel — left side, vertically centered */
   #whisper-panel {
     position: fixed;
-    bottom: 24px;
+    top: 50%;
     left: 24px;
-    max-width: 380px;
+    transform: translateY(-50%);
+    max-width: 280px;
     z-index: 8;
     pointer-events: none;
     opacity: 0;
@@ -64,7 +66,7 @@
   #whisper-panel.visible { opacity: 1; }
   #whisper-type {
     font-family: 'Courier New', monospace;
-    font-size: 9px;
+    font-size: 8px;
     letter-spacing: 0.14em;
     text-transform: uppercase;
     color: rgba(255,255,255,0.2);
@@ -72,19 +74,19 @@
   }
   #whisper-text {
     font-family: Georgia, 'Times New Roman', serif;
-    font-size: 14px;
-    line-height: 1.65;
-    color: rgba(255,255,255,0.45);
+    font-size: 13px;
+    line-height: 1.7;
+    color: rgba(255,255,255,0.4);
     font-style: italic;
   }
   #whisper-panel.type-ukraine #whisper-text {
-    color: rgba(228,172,68,0.55);
+    color: rgba(228,172,68,0.5);
     font-style: normal;
   }
   #whisper-panel.type-essay #whisper-text {
     font-family: 'Courier New', monospace;
-    font-size: 12px;
-    color: rgba(175,148,240,0.45);
+    font-size: 11px;
+    color: rgba(175,148,240,0.4);
     font-style: normal;
   }
 
@@ -105,34 +107,31 @@
   #nyc-clock { color: rgba(120,165,220,0.4); }
 
   /* Machine vitals HUD — bottom right */
-  /* Machine vitals — bottom left, subtle */
-  #vitals-hud {
+  /* Bottom bar — single row with vitals + assumptions */
+  #bottom-bar {
     position: fixed;
-    bottom: 16px;
-    left: 20px;
+    bottom: 0;
+    left: 0;
+    right: 0;
     z-index: 8;
     pointer-events: none;
-    font-family: 'Courier New', monospace;
-    font-size: 8px;
-    letter-spacing: 0.06em;
-    color: rgba(255,255,255,0.2);
-    text-align: left;
-    line-height: 1.9;
-  }
-
-  /* Assumptions counter — bottom center */
-  #assumptions-counter {
-    position: fixed;
-    bottom: 16px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 8;
-    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px;
     font-family: 'Courier New', monospace;
     font-size: 9px;
     letter-spacing: 0.08em;
-    color: rgba(200,62,42,0.35);
-    text-align: center;
+    background: linear-gradient(transparent, rgba(4,6,16,0.6));
+  }
+  #vitals-hud {
+    color: rgba(255,255,255,0.25);
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  #assumptions-counter {
+    color: rgba(200,62,42,0.5);
     text-transform: uppercase;
     opacity: 0;
     transition: opacity 2s;
@@ -332,34 +331,35 @@
   #gen-feed-text .token-mid  { color: rgba(245,238,220,0.3); }
   #gen-feed-text .token-low  { color: rgba(220,70,50,0.65); }
 
-  /* Assumptions ledger — bottom right, the invented facts */
+  /* Assumptions ledger — right side, vertically centered */
   #assumptions-ledger {
     position: fixed;
-    bottom: 16px;
-    right: 20px;
+    top: 50%;
+    right: 24px;
+    transform: translateY(-50%);
     z-index: 8;
     pointer-events: none;
     font-family: 'Courier New', monospace;
-    font-size: 8px;
+    font-size: 9px;
     letter-spacing: 0.04em;
-    color: rgba(200,70,50,0.35);
+    color: rgba(200,70,50,0.4);
     text-align: right;
     max-width: 300px;
-    max-height: 100px;
+    max-height: 200px;
     overflow: hidden;
-    line-height: 1.8;
+    line-height: 2;
   }
   #assumptions-ledger .ledger-count {
-    color: rgba(200,70,50,0.5);
-    margin-bottom: 6px;
-    font-size: 8px;
+    color: rgba(200,70,50,0.55);
+    margin-bottom: 8px;
+    font-size: 9px;
     letter-spacing: 0.1em;
     text-transform: uppercase;
   }
   #assumptions-ledger .ledger-item {
     opacity: 0;
     transition: opacity 1.5s ease-in;
-    color: rgba(200,70,50,0.3);
+    color: rgba(200,70,50,0.35);
     font-style: italic;
   }
   #assumptions-ledger .ledger-item.visible {
@@ -395,11 +395,11 @@
   <div id="alert-badge">AIR RAID ALERT — KYIV</div>
 </div>
 
-<!-- Machine vitals HUD -->
-<div id="vitals-hud"></div>
-
-<!-- Assumptions counter -->
-<div id="assumptions-counter"></div>
+<!-- Bottom bar: vitals + assumptions counter -->
+<div id="bottom-bar">
+  <div id="vitals-hud"></div>
+  <div id="assumptions-counter"></div>
+</div>
 
 <!-- Generation feed -->
 <div id="gen-feed">
