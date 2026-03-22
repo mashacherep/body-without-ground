@@ -118,21 +118,24 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 10px 20px;
+    padding: 8px 20px;
     font-family: 'Courier New', monospace;
     font-size: 9px;
     letter-spacing: 0.08em;
-    background: linear-gradient(transparent, rgba(4,6,16,0.6));
+    border-top: 1px solid rgba(255,255,255,0.04);
+    background: rgba(4,6,16,0.5);
   }
   #vitals-hud {
-    color: rgba(255,255,255,0.25);
+    color: rgba(255,255,255,0.3);
     display: flex;
-    gap: 16px;
+    gap: 18px;
     flex-wrap: wrap;
   }
   #assumptions-counter {
-    color: rgba(200,62,42,0.5);
+    color: rgba(200,62,42,0.6);
     text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: 8px;
     opacity: 0;
     transition: opacity 2s;
   }
@@ -331,7 +334,7 @@
   #gen-feed-text .token-mid  { color: rgba(245,238,220,0.3); }
   #gen-feed-text .token-low  { color: rgba(220,70,50,0.65); }
 
-  /* Assumptions ledger — right side, vertically centered */
+  /* Assumptions ledger — right side, the machine's guesses about you */
   #assumptions-ledger {
     position: fixed;
     top: 50%;
@@ -339,28 +342,32 @@
     transform: translateY(-50%);
     z-index: 8;
     pointer-events: none;
-    font-family: 'Courier New', monospace;
-    font-size: 9px;
-    letter-spacing: 0.04em;
-    color: rgba(200,70,50,0.4);
+    font-family: Georgia, serif;
+    font-size: 12px;
+    color: rgba(200,70,50,0.5);
     text-align: right;
-    max-width: 300px;
-    max-height: 200px;
+    max-width: 320px;
+    max-height: 240px;
     overflow: hidden;
-    line-height: 2;
+    line-height: 2.2;
   }
   #assumptions-ledger .ledger-count {
-    color: rgba(200,70,50,0.55);
-    margin-bottom: 8px;
-    font-size: 9px;
-    letter-spacing: 0.1em;
+    font-family: 'Courier New', monospace;
+    color: rgba(200,70,50,0.4);
+    margin-bottom: 10px;
+    font-size: 8px;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
   }
   #assumptions-ledger .ledger-item {
     opacity: 0;
     transition: opacity 1.5s ease-in;
-    color: rgba(200,70,50,0.35);
+    color: rgba(200,70,50,0.4);
     font-style: italic;
+  }
+  #assumptions-ledger .ledger-item::before {
+    content: '\u2014 ';
+    opacity: 0.4;
   }
   #assumptions-ledger .ledger-item.visible {
     opacity: 1;
