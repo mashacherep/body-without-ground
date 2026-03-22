@@ -197,7 +197,10 @@ async function birthCellWithType(type) {
 
   // Show content in generation feed (the viewer watches the machine write)
   if (content) {
+    console.log('[scheduler] content for feed:', type, content.slice(0, 80))
     showGenerationFeed(type, content, context)
+  } else {
+    console.log('[scheduler] no content for', type, '— visual only')
   }
 
   // Drift camera toward the birth

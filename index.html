@@ -156,11 +156,15 @@
   #gen-feed.visible { opacity: 1; }
   #gen-feed-text {
     font-family: Georgia, serif;
-    font-size: clamp(1rem, 2.5vw, 1.6rem);
-    color: rgba(245,238,220,0.5);
+    font-size: clamp(1.4rem, 3.5vw, 2.4rem);
+    color: rgba(245,238,220,0.85);
     font-style: italic;
-    line-height: 1.7;
+    line-height: 1.6;
+    max-width: 65vw;
   }
+  #gen-feed-text .token-high { color: rgba(245,238,220,0.85); }
+  #gen-feed-text .token-mid  { color: rgba(245,238,220,0.55); }
+  #gen-feed-text .token-low  { color: rgba(220,70,50,0.8); }
   #gen-feed-type {
     font-family: 'Courier New', monospace;
     font-size: 8px;
