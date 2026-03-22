@@ -357,6 +357,8 @@ function showGenerationFeed(type, content, context) {
   }
   if (!feedEl) return
 
+  console.log('[feed] showing:', type, '—', content.slice(0, 60))
+
   // Show first 3 lines of content
   const lines = content.split('\n').filter(l => l.trim()).slice(0, 3).join('\n')
   feedTypeEl.textContent = type
