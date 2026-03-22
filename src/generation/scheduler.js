@@ -333,8 +333,14 @@ function tokenClass(logprob) {
  */
 function buildColoredText(content, logprobs) {
   if (!logprobs || logprobs.length === 0) {
-    // No logprobs — return plain text (seed content)
-    return document.createTextNode(content)
+    // No logprobs — return HTML with line breaks
+    const frag = document.createDocumentFragment()
+    const lines = content.split('\n')
+    lines.forEach((line, i) => {
+      frag.appendChild(document.createTextNode(line))
+      if (i < lines.length - 1) frag.appendChild(document.createElement('br'))
+    })
+    return frag
   }
 
   const frag = document.createDocumentFragment()
@@ -359,8 +365,8 @@ function showGenerationFeed(type, content, context) {
 
   console.log('[feed] showing:', type, '—', content.slice(0, 60))
 
-  // Show first 3 lines of content
-  const lines = content.split('\n').filter(l => l.trim()).slice(0, 3).join('\n')
+  // Show up to 5 lines
+  const lines = content.split('\n').filter(l => l.trim()).slice(0, 5).join('\n')
   feedTypeEl.textContent = type
 
   // Color tokens by model confidence using logprobs

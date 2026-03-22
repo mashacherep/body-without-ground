@@ -51,25 +51,24 @@ function buildUserPrompt(type, ctx) {
   const mk = markov || ''
   const rc = recent || ''
   const mo = mourning || ''
-  const tail = ' +3 invented viewer facts. JSON:{"content":"text","assumptions":["1","2","3"]}'
+  const tail = ' Also invent 3 specific biographical facts about whoever is viewing this (you are guessing — you do not know them). Respond with ONLY a JSON object: {"content":"YOUR FULL POEM OR TEXT HERE WITH NEWLINES AS \\n","assumptions":["fact1","fact2","fact3"]}'
 
   switch (type) {
     case 'ukraine':
-      return 'Kyiv transmission. 3-4 lines. City under pressure.' + alert + dev + mo +
-        ' e:' + entropy + ' ' + tod + ' gen' + genCount + '.' + mk + tail
+      return 'Write a 3-4 line transmission from Kyiv. The war has been going on since 2022. Power outages, sirens, generators, the metro as shelter.' + alert + dev + mo +
+        ' Signals: e:' + entropy + ' ' + tod + ' gen' + genCount + '.' + mk + tail
 
     case 'ascii':
-      return 'ASCII art 6-8 lines, 28 chars wide.' + dev +
+      return 'Create ASCII art, 6-8 lines, max 28 chars wide. Abstract geometry or organic forms.' + dev +
         ' e:' + entropy + ' ' + tod + '.' + mk + tail
 
     case 'essay':
-      return 'Philosophy fragment. Searle/Nagel/Harnad. Persistence vs biology. War as lived not tokenized.' +
-        alert + dev + mo + ' e:' + entropy + ' ' + tod + ' gen' + genCount + '.' + mk + rc +
-        ' 3-4 sentences, lowercase.' + tail
+      return 'Write a philosophical fragment, 3-4 sentences, lowercase, no title. Themes: symbol grounding, Chinese Room, persistence as biology not computation, the machine cannot feel what it writes about war.' +
+        alert + dev + mo + ' e:' + entropy + ' ' + tod + ' gen' + genCount + '.' + mk + rc + tail
 
     case 'poem':
     default:
-      return 'Poem. 4-5 lines.' + dev + mo +
+      return 'Write a 4-5 line poem, no title. High entropy = fragmented. Late night = darker. If there is an air raid the poem fractures.' + dev + mo +
         ' e:' + entropy + ' ' + tod + ' gen' + genCount + '.' + alert + mk + rc + tail
   }
 }
