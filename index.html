@@ -51,13 +51,12 @@
   }
 
   /* Whisper panel — ambient text from nearby cells */
-  /* Whisper panel — left side, vertically centered */
+  /* Whisper panel — top left corner */
   #whisper-panel {
     position: fixed;
-    top: 50%;
-    left: 24px;
-    transform: translateY(-50%);
-    max-width: 280px;
+    top: 16px;
+    left: 20px;
+    max-width: 260px;
     z-index: 8;
     pointer-events: none;
     opacity: 0;
@@ -74,9 +73,9 @@
   }
   #whisper-text {
     font-family: Georgia, 'Times New Roman', serif;
-    font-size: 13px;
-    line-height: 1.7;
-    color: rgba(255,255,255,0.4);
+    font-size: 11px;
+    line-height: 1.6;
+    color: rgba(255,255,255,0.3);
     font-style: italic;
   }
   #whisper-panel.type-ukraine #whisper-text {
