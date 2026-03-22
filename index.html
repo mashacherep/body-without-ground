@@ -105,24 +105,25 @@
   #nyc-clock { color: rgba(120,165,220,0.4); }
 
   /* Machine vitals HUD — bottom right */
+  /* Machine vitals — bottom left, subtle */
   #vitals-hud {
     position: fixed;
-    bottom: 20px;
-    right: 20px;
+    bottom: 16px;
+    left: 20px;
     z-index: 8;
     pointer-events: none;
     font-family: 'Courier New', monospace;
     font-size: 8px;
     letter-spacing: 0.06em;
-    color: rgba(255,255,255,0.18);
-    text-align: right;
+    color: rgba(255,255,255,0.2);
+    text-align: left;
     line-height: 1.9;
   }
 
   /* Assumptions counter — bottom center */
   #assumptions-counter {
     position: fixed;
-    bottom: 20px;
+    bottom: 16px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 8;
@@ -130,8 +131,9 @@
     font-family: 'Courier New', monospace;
     font-size: 9px;
     letter-spacing: 0.08em;
-    color: rgba(200,62,42,0.3);
+    color: rgba(200,62,42,0.35);
     text-align: center;
+    text-transform: uppercase;
     opacity: 0;
     transition: opacity 2s;
   }
@@ -330,34 +332,35 @@
   #gen-feed-text .token-mid  { color: rgba(245,238,220,0.3); }
   #gen-feed-text .token-low  { color: rgba(220,70,50,0.65); }
 
-  /* Assumptions ledger — persistent scrollable log */
+  /* Assumptions ledger — bottom right, the invented facts */
   #assumptions-ledger {
     position: fixed;
-    bottom: 60px;
+    bottom: 16px;
     right: 20px;
     z-index: 8;
     pointer-events: none;
     font-family: 'Courier New', monospace;
     font-size: 8px;
     letter-spacing: 0.04em;
-    color: rgba(220,70,50,0.3);
+    color: rgba(200,70,50,0.35);
     text-align: right;
-    max-width: 280px;
-    max-height: 120px;
+    max-width: 300px;
+    max-height: 100px;
     overflow: hidden;
-    line-height: 1.7;
+    line-height: 1.8;
   }
   #assumptions-ledger .ledger-count {
-    color: rgba(220,70,50,0.4);
-    margin-bottom: 4px;
-    font-size: 7px;
+    color: rgba(200,70,50,0.5);
+    margin-bottom: 6px;
+    font-size: 8px;
     letter-spacing: 0.1em;
     text-transform: uppercase;
   }
   #assumptions-ledger .ledger-item {
     opacity: 0;
     transition: opacity 1.5s ease-in;
-    color: rgba(220,70,50,0.22);
+    color: rgba(200,70,50,0.3);
+    font-style: italic;
   }
   #assumptions-ledger .ledger-item.visible {
     opacity: 1;
