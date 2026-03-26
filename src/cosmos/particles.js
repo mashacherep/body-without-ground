@@ -8,6 +8,7 @@ import {
   behaviorGradient, behaviorApoptosis, behaviorWavefunction, behaviorSeismic,
   behaviorEmbedding, behaviorReactionDiffusion
 } from './behaviors.js'
+import { isAlertActive } from '../signals/alerts.js'
 
 const MAX_PARTICLES = 16000
 
@@ -284,7 +285,7 @@ export function updateParticles(time, breathPhase) {
         behaviorConway(positions, sizes, mapping.startIdx, mapping.count, time)
         break
       case 'ukraine':
-        behaviorUkraine(positions, sizes, alphas, mapping.startIdx, mapping.count, time, false)
+        behaviorUkraine(positions, sizes, alphas, mapping.startIdx, mapping.count, time, isAlertActive())
         break
       case 'tokenprob':
         behaviorTokenprob(positions, sizes, mapping.startIdx, mapping.count, time)

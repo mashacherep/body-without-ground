@@ -4,13 +4,8 @@
  * All other cell types are instant (visual only, no API call).
  */
 
-const GROQ_KEY = import.meta.env.VITE_GROQ_KEY || ''
 const GROQ_MODEL = 'llama-3.3-70b-versatile'
-
-const IS_LOCAL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-const GROQ_URL = IS_LOCAL
-  ? 'https://api.groq.com/openai/v1/chat/completions'
-  : '/api/groq'
+const GROQ_URL = '/api/groq'
 
 // Only these types hit the API
 const API_TYPES = new Set(['poem', 'essay', 'ukraine', 'ascii'])
@@ -30,11 +25,8 @@ export function isApiType(type) {
 }
 
 export function hasGroqKey() {
-  // When deployed, the proxy handles the key — no client-side key needed
-  if (!IS_LOCAL) return true
-  const has = GROQ_KEY.length > 10
-  if (!has) console.warn('[groq] No API key found — using seed content')
-  return has
+  // The serverless proxy handles the key — no client-side key needed
+  return true
 }
 
 export function getLastLogprobs() {
@@ -157,7 +149,6 @@ export async function generateContent(type, context) {
   // Rate limit
   const now = Date.now()
   if (now - lastCallTime < MIN_INTERVAL) {
-    console.log('[groq] rate limited — %dms since last call', now - lastCallTime)
     return null
   }
   lastCallTime = now
@@ -166,7 +157,6 @@ export async function generateContent(type, context) {
 
   try {
     const headers = { 'Content-Type': 'application/json' }
-    if (IS_LOCAL) headers['Authorization'] = 'Bearer ' + GROQ_KEY
 
     const res = await fetch(GROQ_URL, {
       method: 'POST',
@@ -175,6 +165,7 @@ export async function generateContent(type, context) {
         model: GROQ_MODEL,
         max_tokens: 180,
         temperature: 0.88,
+        logprobs: true,
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
           { role: 'user', content: userMsg },
@@ -187,8 +178,6 @@ export async function generateContent(type, context) {
       console.error('[groq] API error:', res.status, errBody)
       throw new Error('groq ' + res.status)
     }
-    console.log('[groq] generated', type, 'successfully')
-
     const data = await res.json()
     const raw = (data.choices?.[0]?.message?.content || '').trim()
     const parsed = parseResponse(raw)

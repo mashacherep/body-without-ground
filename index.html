@@ -303,6 +303,24 @@
     text-align: center;
   }
 
+  /* Controls hint — shown after intro, fades out */
+  #controls-hint {
+    position: fixed;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 11;
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: rgba(255,255,255,0.18);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 1.5s ease-in-out;
+    white-space: nowrap;
+  }
+  #controls-hint.visible { opacity: 1; }
+
   #sound-prompt {
     position: fixed;
     bottom: 80px;
@@ -416,6 +434,7 @@
 <!-- Assumptions ledger — persistent log of invented facts -->
 <div id="assumptions-ledger"></div>
 
+<div id="controls-hint">scroll to fly · drag to look · double-click to read</div>
 <div id="sound-prompt">click anywhere to let the garden breathe</div>
 <!-- Reading view overlay -->
 <div id="reading-overlay" aria-live="polite">

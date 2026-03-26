@@ -90,7 +90,6 @@ export function loadState() {
       })
     }
 
-    console.log(`[persistence] Restored ${restored} cells, ${(state.corpus || []).length} corpus words, ${state.deaths || 0} deaths`)
     return restored > 0
   } catch (e) {
     console.warn('[persistence] Failed to load:', e)

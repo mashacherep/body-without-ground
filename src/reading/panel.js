@@ -2,6 +2,8 @@
 import { renderTextContent } from './text.js'
 import { renderVizContent, stopActiveViz } from './viz.js'
 import { exitReadingView } from '../camera/transitions.js'
+import { clearOverlay } from '../narrative/overlay.js'
+import { hideWhisper } from '../narrative/whisper.js'
 
 const TEXT_TYPES = new Set(['poem', 'essay', 'ukraine', 'ascii', 'about', 'music'])
 
@@ -11,6 +13,13 @@ let kyivClockInterval = null
 
 export function showReadingPanel(cell) {
   activeCell = cell
+
+  // Dismiss all ambient text layers before showing the reading panel
+  clearOverlay()
+  hideWhisper()
+  const genFeed = document.getElementById('gen-feed')
+  if (genFeed) genFeed.classList.remove('visible')
+
   const overlay = document.getElementById('reading-overlay')
   const typeEl = document.getElementById('reading-type')
   const contentEl = document.getElementById('reading-content')

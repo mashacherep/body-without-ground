@@ -15,7 +15,7 @@ export function initClocks() {
 function updateClocks() {
   if (!kyivEl || !nycEl) return
   try {
-    const kyiv = new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Kiev' }))
+    const kyiv = new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Kyiv' }))
     const nyc = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }))
 
     const kh = kyiv.getHours(), km = kyiv.getMinutes()
@@ -30,6 +30,6 @@ function updateClocks() {
 
 export function getKyivHour() {
   try {
-    return new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Kiev' })).getHours()
+    return new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Kyiv' })).getHours()
   } catch { return 12 }
 }

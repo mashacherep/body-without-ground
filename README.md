@@ -18,9 +18,9 @@ What the installation asks is not "is the AI conscious?" — that question is to
 
 ## Technical Architecture
 
-- **Rendering**: Three.js WebGL — 16,000 particles, custom GLSL shaders, Lorenz and Rössler strange attractors cycling on a 12-minute period
+- **Rendering**: Three.js WebGL — 16,000 particles, custom GLSL shaders, Lorenz and Rössler strange attractors
 - **AI Generation**: Groq API (Llama 3.3 70B) — generates poems, philosophical fragments, and transmissions from Kyiv every 4 minutes; logprobs color each token by model confidence when available
-- **Signal Integration**: Real air raid alerts (alerts.in.ua API), device battery and CPU via Performance/Battery APIs, USGS seismic data
+- **Signal Integration**: Real air raid alerts (alerts.in.ua API), device battery and CPU via Performance/Battery APIs
 - **The Machine's Body**: CPU pressure → Lorenz chaos parameter (ρ); battery level → attractor speed; frame timing → breathing rhythm; alert active → chaos spike
 - **Persistence**: localStorage — the garden evolves across sessions, accumulates a Markov corpus from all generated text, remembers every death
 - **The Assumptions Mechanic**: Each generation invents three biographical facts about the viewer. Always wrong. The hallucination problem rendered as an art form rather than a defect.
@@ -50,6 +50,17 @@ The assumptions mechanic is the sharpest edge. The machine invents facts about t
 ## Built With
 
 Three.js · Groq API (Llama 3.3 70B) · Web Audio API · alerts.in.ua API · vanilla JavaScript · Vite
+
+---
+
+## Getting Started
+
+```bash
+npm install
+npm run dev
+```
+
+The installation works without API keys — it falls back to seed content (pre-written poems, essays, and transmissions). To enable live AI generation, add `GROQ_KEY` and `ALERTS_API_KEY` to a `.env` file. The serverless proxy in `api/` keeps keys off the client.
 
 ---
 

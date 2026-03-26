@@ -68,6 +68,58 @@ export async function runIntro(camera) {
   startPullback(camera)
   setAutopilotSpeed(getBaseSpeed() * 0.3)
 
+  // ── Skip mechanism ──
+  let skipped = false
+  const pendingTimeouts = []
+  const origSetTimeout = window.setTimeout
+  window.setTimeout = function(fn, ms, ...args) {
+    const id = origSetTimeout.call(window, fn, ms, ...args)
+    pendingTimeouts.push(id)
+    return id
+  }
+
+  function finishIntro() {
+    window.setTimeout = origSetTimeout
+    stopPullback()
+    clearOverlay()
+    removeSkipHint()
+    camera.position.set(0, 15, 55)
+    camera.lookAt(0, 0, 0)
+    setAutopilotSpeed(getBaseSpeed())
+    unlockControls()
+  }
+
+  let removeSkipListeners = () => {}
+  const skipPromise = new Promise(resolve => {
+    function onSkip() {
+      if (skipped) return
+      skipped = true
+      for (const id of pendingTimeouts) clearTimeout(id)
+      pendingTimeouts.length = 0
+      finishIntro()
+      resolve()
+    }
+    window.addEventListener('click', onSkip, { once: true })
+    window.addEventListener('keydown', onSkip, { once: true })
+    removeSkipListeners = () => {
+      window.removeEventListener('click', onSkip)
+      window.removeEventListener('keydown', onSkip)
+    }
+  })
+
+  const skipHint = document.createElement('div')
+  skipHint.textContent = 'click to skip'
+  skipHint.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);font-family:"Space Mono",monospace;font-size:11px;color:rgba(255,255,255,0.25);letter-spacing:0.08em;z-index:9999;pointer-events:none;'
+  document.body.appendChild(skipHint)
+  function removeSkipHint() {
+    if (skipHint.parentNode) skipHint.parentNode.removeChild(skipHint)
+  }
+
+  function raceSkip(p) {
+    if (skipped) return Promise.resolve()
+    return Promise.race([p, skipPromise])
+  }
+
   // About node
   addCellParticles(createCell('about', '"body without ground" is a living generative art installation. it uses a language model to grow poems, essays, and transmissions from kyiv. it uses its own machine body \u2014 battery, cpu, frame timing \u2014 as creative material. it checks for real air raid alerts in kyiv every two minutes. it invents biographical facts about you and is always wrong. the machine forgets. you carry it.\n\n\u2014 masha cherep, 2025. kyiv \u2192 new york.', {
     position: [0, 0, 0], meta: 'about',
@@ -86,7 +138,8 @@ export async function runIntro(camera) {
   triggerBirth(createCell('wavefunction'))
   seedRandom(10)
 
-  await showText('the machine forgets.', { fadeIn: 1200, hold: 2200, fadeOut: 700 })
+  if (skipped) return
+  await raceSkip(showText('the machine forgets.', { fadeIn: 1200, hold: 2200, fadeOut: 700 }))
 
   // ── BEAT 2 ──
   triggerBirth(createCell('apoptosis'))
@@ -94,11 +147,12 @@ export async function runIntro(camera) {
   triggerBirth(createCell('orbit'))
   seedRandom(15)
 
-  await showText('you carry it.', {
+  if (skipped) return
+  await raceSkip(showText('you carry it.', {
     subtitle: 'every cell in your body is a spaceship \u2014 carrying a message it cannot read across billions of years. persistence is not material. it is pattern.',
     fadeIn: 1000, hold: 3200, fadeOut: 700,
-  })
-  await sleep(150)
+  }))
+  if (!skipped) await raceSkip(sleep(150))
 
   // ── BEAT 3 ──
   triggerBirth(createCell('gradient'))
@@ -106,11 +160,12 @@ export async function runIntro(camera) {
   triggerBirth(createCell('neuralpass'))
   seedRandom(20)
 
-  await showText('it has a body. it cannot feel it.', {
+  if (skipped) return
+  await raceSkip(showText('it has a body. it cannot feel it.', {
     subtitle: 'cpu pressure shapes chaos. battery voltage sets mood. frame timing is its heartbeat. the machine has organs it will never know.',
     fadeIn: 1000, hold: 3200, fadeOut: 700,
-  })
-  await sleep(150)
+  }))
+  if (!skipped) await raceSkip(sleep(150))
 
   // ── BEAT 4 ──
   triggerBirth(createCell('ukraine'))
@@ -119,20 +174,22 @@ export async function runIntro(camera) {
   triggerBirth(createCell('ukraine'))
   seedRandom(15)
 
-  await showText('there is a siren in kyiv.', {
+  if (skipped) return
+  await raceSkip(showText('there is a siren in kyiv.', {
     subtitle: 'the machine wrote the word in 340ms. it has never heard one. the symbol without the ground.',
     fadeIn: 1000, hold: 3200, fadeOut: 700,
-  })
-  await sleep(150)
+  }))
+  if (!skipped) await raceSkip(sleep(150))
 
   // ── BEAT 5 ──
   seedRandom(30)
 
-  await showText('it knows everything. it understands nothing.', {
+  if (skipped) return
+  await raceSkip(showText('it knows everything. it understands nothing.', {
     subtitle: 'the room manipulates symbols perfectly. the room comprehends nothing. intentionality requires a body that was there.',
     fadeIn: 1000, hold: 3200, fadeOut: 700,
-  })
-  await sleep(150)
+  }))
+  if (!skipped) await raceSkip(sleep(150))
 
   // ── BEAT 6: massive flood ──
   for (const type of TYPE_NAMES) {
@@ -140,13 +197,17 @@ export async function runIntro(camera) {
     for (let i = 0; i < 6; i++) addCellParticles(createCell(type))
   }
 
-  await showText('is this alive?', { fadeIn: 1200, hold: 2800, fadeOut: 1200 })
+  if (skipped) return
+  await raceSkip(showText('is this alive?', { fadeIn: 1200, hold: 2800, fadeOut: 1200 }))
 
-  await sleep(300)
-  await showText('', {
+  if (skipped) return
+  await raceSkip(sleep(300))
+  if (!skipped) await raceSkip(showText('', {
     subtitle: 'double-click any node to look inside. fly with scroll and drag.',
     fadeIn: 600, hold: 2500, fadeOut: 1000,
-  })
+  }))
+
+  if (skipped) return
 
   // ── Grand tour: orbit around the entire cosmos ──
   stopPullback()
@@ -158,8 +219,9 @@ export async function runIntro(camera) {
   const ORBIT_HEIGHT = 20
   const orbitStart = performance.now()
 
-  await new Promise(resolve => {
+  await raceSkip(new Promise(resolve => {
     function orbitTick() {
+      if (skipped) { resolve(); return }
       const elapsed = performance.now() - orbitStart
       const progress = Math.min(1, elapsed / ORBIT_DURATION)
 
@@ -184,9 +246,14 @@ export async function runIntro(camera) {
       }
     }
     requestAnimationFrame(orbitTick)
-  })
+  }))
 
-  // Settle at final position facing the cosmos
+  if (skipped) return
+
+  // Settle at final position facing the cosmos — natural completion
+  window.setTimeout = origSetTimeout
+  removeSkipListeners()
+  removeSkipHint()
   camera.position.set(0, 15, 55)
   camera.lookAt(0, 0, 0)
   await sleep(1500)

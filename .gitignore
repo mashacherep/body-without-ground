@@ -7,3 +7,6 @@ dist/
 *.local
 *.log
 .DS_Store
+.vercel
+.gitnexus
+index-v1.html

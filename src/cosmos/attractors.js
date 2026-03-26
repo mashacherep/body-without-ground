@@ -27,7 +27,7 @@ export function initAttractors(scene) {
 
   for (let i = 0; i < LORENZ_TRAIL; i++) {
     stepLorenz()
-    const scale = 1.8
+    const scale = 1.2
     lorenzPositions[i * 3]     = lorenz.x * scale
     lorenzPositions[i * 3 + 1] = lorenz.z * scale - 30
     lorenzPositions[i * 3 + 2] = lorenz.y * scale

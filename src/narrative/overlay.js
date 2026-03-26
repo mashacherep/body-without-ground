@@ -1,15 +1,29 @@
 /**
  * Reusable cinematic text overlay.
  * Renders heading + optional subtitle over the WebGL canvas.
+ *
+ * Coordinates with the generation feed (#gen-feed) and whisper panel
+ * to prevent multiple text layers from overlapping on screen.
  */
 
 let headingEl = null
 let subtitleEl = null
 let currentTimeout = null
 
+// Cross-system coordination: dismiss other text layers when narrative text appears
+let _dismissGenFeed = null
+let _dismissWhisper = null
+export function registerGenFeedDismiss(fn) { _dismissGenFeed = fn }
+export function registerWhisperDismiss(fn) { _dismissWhisper = fn }
+
 function ensureElements() {
   if (!headingEl) headingEl = document.getElementById('narrative-heading')
   if (!subtitleEl) subtitleEl = document.getElementById('narrative-subtitle')
+}
+
+export function isOverlayVisible() {
+  ensureElements()
+  return headingEl && headingEl.classList.contains('visible')
 }
 
 export function showText(heading, opts = {}) {
@@ -20,6 +34,10 @@ export function showText(heading, opts = {}) {
     clearTimeout(currentTimeout)
     currentTimeout = null
   }
+
+  // Dismiss other text layers so center text doesn't stack
+  if (_dismissGenFeed) _dismissGenFeed()
+  if (_dismissWhisper) _dismissWhisper()
 
   return new Promise((resolve) => {
     headingEl.textContent = heading

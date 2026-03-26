@@ -16,16 +16,26 @@ import { showReadingPanel, hideReadingPanel, isReadingPanelVisible } from './rea
 import { stopActiveViz } from './reading/viz.js'
 import { startAlertChecking, onAlertChange, isAlertActive } from './signals/alerts.js'
 import { holdBreath, releaseBreath } from './cosmos/breathing.js'
-import { showText } from './narrative/overlay.js'
+import { showText, registerWhisperDismiss } from './narrative/overlay.js'
 import { startScheduler } from './generation/scheduler.js'
 import { startNarrativeArc } from './narrative/arc.js'
-import { initWhisper, updateWhisper } from './narrative/whisper.js'
+import { initWhisper, updateWhisper, hideWhisper } from './narrative/whisper.js'
 import { initClocks } from './signals/clocks.js'
 import { initVitals } from './signals/vitals.js'
 import { initLedger } from './reading/ledger.js'
-// import { initMinimap } from './signals/minimap.js' // removed — needs real SVG map data
 import { getSessionCount, loadState, startAutoSave } from './state/persistence.js'
 import { initSound, startDrone, fadeDrone, silenceDrone, restoreDrone, updateDroneBreathing, playBirthTone, playDeathTone } from './signals/sound.js'
+
+// Device signals for attractors
+let cachedBatteryLevel = 1
+let cpuPressure = 0
+
+if (navigator.getBattery) {
+  navigator.getBattery().then(b => {
+    cachedBatteryLevel = b.level
+    b.addEventListener('levelchange', () => { cachedBatteryLevel = b.level })
+  }).catch(() => {})
+}
 
 // Scene
 const scene = new THREE.Scene()
@@ -55,9 +65,9 @@ initCarriers(scene)
 
 // Init HUD elements
 initWhisper()
+registerWhisperDismiss(hideWhisper)
 initClocks()
 initVitals()
-// initMinimap() // removed
 initLedger()
 
 // Sound prompt — shown after intro, dismissed on first click
@@ -85,6 +95,24 @@ runIntro(camera).then(() => {
   startNarrativeArc()
   startAutoSave()
   if (soundPrompt && !soundStarted) soundPrompt.classList.add('visible')
+
+  // Show controls hint after intro
+  const controlsHint = document.getElementById('controls-hint')
+  if (controlsHint) {
+    controlsHint.classList.add('visible')
+    let hintDismissed = false
+    function dismissHint() {
+      if (hintDismissed) return
+      hintDismissed = true
+      controlsHint.classList.remove('visible')
+      window.removeEventListener('wheel', dismissHint)
+      window.removeEventListener('pointerdown', dismissHint)
+    }
+    // Fade out after 10 seconds or on first interaction
+    setTimeout(dismissHint, 10000)
+    window.addEventListener('wheel', dismissHint)
+    window.addEventListener('pointerdown', dismissHint)
+  }
 })
 
 // Air raid alerts — cosmos responds to real alerts in Kyiv
@@ -172,7 +200,10 @@ function animate() {
   const cpm = getCellParticleMap()
   updateBirths(bufs.positions, bufs.alphas, bufs.sizes, cpm)
   updateDeaths(bufs.positions, bufs.alphas, bufs.colors, cpm)
-  updateAttractors(0, 1)
+  // CPU pressure proxy: how far frame time deviates from 16.6ms target (60fps)
+  // 0 = smooth, approaches 1 under heavy load
+  cpuPressure = Math.min(1, Math.max(0, (dt - 0.016) / 0.050))
+  updateAttractors(cpuPressure, cachedBatteryLevel)
   updateFilaments(elapsed)
   updateTendrils(elapsed)
   updateCarriers(elapsed)
