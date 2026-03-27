@@ -31,7 +31,7 @@ const BLEND_DURATION = 5.0   // slower autopilot blend (from 3.0)
 
 // Home transition state
 let homeTransition = null // { start, startPos, startQuat, progress }
-const HOME_POSITION = new THREE.Vector3(0, 15, 55)
+const HOME_POSITION = new THREE.Vector3(0, 30, 95)
 const HOME_DURATION = 2.0
 
 export function initCameraSystem(cam, domElement) {

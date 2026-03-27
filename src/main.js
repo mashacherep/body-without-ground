@@ -38,12 +38,12 @@ if (navigator.getBattery) {
 // Scene — deep blue-black, mission control aesthetic
 const scene = new THREE.Scene()
 scene.background = new THREE.Color(0x0a0a0f)
-scene.fog = new THREE.FogExp2(0x0a0a0f, 0.002)
+scene.fog = new THREE.FogExp2(0x0a0a0f, 0.0012)
 
 // Camera
 const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 5000)
-camera.position.set(0, 15, 55)
-camera.lookAt(0, 0, 0)
+camera.position.set(0, 30, 95)
+camera.lookAt(0, -5, 0)
 
 // Renderer
 const renderer = new THREE.WebGLRenderer({ antialias: true })
@@ -155,7 +155,7 @@ onAlertChange((active) => {
     restoreDrone()
     if (alertBadge) alertBadge.classList.remove('active')
     if (alertStatus) alertStatus.style.display = ''
-    scene.fog = new THREE.FogExp2(0x0a0a0f, 0.002)
+    scene.fog = new THREE.FogExp2(0x0a0a0f, 0.0012)
     showText('all clear — kyiv.', {
       subtitle: 'the API returned status: clear. the city exhaled. the model moved to the next token.',
       fadeIn: 1200, hold: 6000, fadeOut: 1500,
