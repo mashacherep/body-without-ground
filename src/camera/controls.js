@@ -31,7 +31,7 @@ const BLEND_DURATION = 5.0   // slower autopilot blend (from 3.0)
 
 // Home transition state
 let homeTransition = null // { start, startPos, startQuat, progress }
-const HOME_POSITION = new THREE.Vector3(0, 30, 95)
+const HOME_POSITION = new THREE.Vector3(0, 20, 80)
 const HOME_DURATION = 2.0
 
 export function initCameraSystem(cam, domElement) {
@@ -110,12 +110,20 @@ export function initCameraSystem(cam, domElement) {
   // Prevent right-click context menu
   domElement.addEventListener('contextmenu', (e) => e.preventDefault())
 
-  initAutopilot(camera.position.clone())
-  mode = 'autopilot'
+  // Hold the camera still for 5 seconds so the user sees the cosmos,
+  // then gently transition to autopilot drift
+  mode = 'hold'
+  setTimeout(() => {
+    if (mode === 'hold') {
+      initAutopilot(camera.position.clone())
+      mode = 'transition'
+      blendProgress = 0
+    }
+  }, 5000)
 }
 
 function onUserInteraction() {
-  if (mode === 'autopilot' || mode === 'transition') {
+  if (mode === 'autopilot' || mode === 'transition' || mode === 'hold') {
     switchToViewer()
   }
   resetIdleTimer()
@@ -150,6 +158,9 @@ function easeInOut(t) {
 }
 
 export function updateCameraSystem(dt) {
+  // Hold mode: camera stays still, user sees the cosmos
+  if (mode === 'hold') return
+
   // Home transition overrides everything
   if (homeTransition) {
     homeTransition.progress += dt / HOME_DURATION

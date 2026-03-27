@@ -40,10 +40,10 @@ const scene = new THREE.Scene()
 scene.background = new THREE.Color(0x0a0a0f)
 scene.fog = new THREE.FogExp2(0x0a0a0f, 0.0012)
 
-// Camera
+// Camera — start facing the cosmos center from a wide angle
 const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 5000)
-camera.position.set(0, 30, 95)
-camera.lookAt(0, -5, 0)
+camera.position.set(0, 20, 80)
+camera.lookAt(0, 0, 0)
 
 // Renderer
 const renderer = new THREE.WebGLRenderer({ antialias: true })
@@ -51,7 +51,7 @@ renderer.setSize(innerWidth, innerHeight)
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2))
 document.body.appendChild(renderer.domElement)
 
-// Camera system
+// Camera system — delay autopilot so the cosmos is visible on landing
 initCameraSystem(camera, renderer.domElement)
 
 // Init cosmos subsystems
