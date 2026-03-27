@@ -7,13 +7,11 @@ import {
 const IDLE_TIMEOUT = 30_000
 const MOVE_SPEED = 40       // units per second
 const LOOK_SPEED = 0.002    // radians per pixel (reduced from 0.003)
-const SCROLL_SPEED = 8      // units per scroll tick
 const DAMPING = 0.96         // velocity decay (smoother from 0.92)
 
-// Zoom constraints
-const ZOOM_MIN = 15
-const ZOOM_MAX = 120
-const SOFT_BOUNDARY = 100
+// Soft boundary — gentle pull, not a wall
+const SOFT_BOUNDARY = 150
+const HARD_BOUNDARY = 200
 
 let camera = null
 let domEl = null
@@ -30,9 +28,6 @@ let keys = {}
 // Blend
 let blendProgress = 0
 const BLEND_DURATION = 5.0   // slower autopilot blend (from 3.0)
-
-// Logarithmic zoom — target distance lerp
-let zoomTargetDistance = null
 
 // Home transition state
 let homeTransition = null // { start, startPos, startQuat, progress }
@@ -81,20 +76,17 @@ export function initCameraSystem(cam, domElement) {
 
   window.addEventListener('pointerup', () => { dragStart = null; dragActive = false })
 
-  // Scroll = logarithmic zoom toward/away from origin
+  // Scroll = fly forward/back along camera direction, speed adapts to distance
   domElement.addEventListener('wheel', (e) => {
     e.preventDefault()
     onUserInteraction()
     if (mode !== 'viewer') return
-
-    const currentDistance = camera.position.length()
-    const baseSpeed = 0.15
-    const zoomSpeed = baseSpeed * (currentDistance / 40)
-
-    // Compute target distance along camera-to-origin axis
-    const scrollDelta = Math.sign(e.deltaY) * zoomSpeed * currentDistance
-    const newDistance = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, currentDistance + scrollDelta))
-    zoomTargetDistance = newDistance
+    const forward = new THREE.Vector3()
+    camera.getWorldDirection(forward)
+    // Distance-adaptive: slower when close to cosmos, faster when far
+    const dist = camera.position.length()
+    const adaptiveSpeed = 3 + (dist / 40) * 5
+    velocity.addScaledVector(forward, -Math.sign(e.deltaY) * adaptiveSpeed * 0.15)
   }, { passive: false })
 
   // WASD + QE for full movement
@@ -134,7 +126,6 @@ function switchToViewer() {
   pauseAutopilot()
   euler.setFromQuaternion(camera.quaternion)
   velocity.set(0, 0, 0)
-  zoomTargetDistance = null
 }
 
 function switchToAutopilot() {
@@ -179,7 +170,6 @@ export function updateCameraSystem(dt) {
       homeTransition = null
       euler.setFromQuaternion(camera.quaternion)
       velocity.set(0, 0, 0)
-      zoomTargetDistance = null
     }
     return
   }
@@ -209,28 +199,17 @@ export function updateCameraSystem(dt) {
     camera.position.add(velocity.clone().multiplyScalar(dt * 60))
     velocity.multiplyScalar(DAMPING)
 
-    // Logarithmic zoom: lerp toward target distance along camera-to-origin axis
-    if (zoomTargetDistance !== null) {
-      const currentDistance = camera.position.length()
-      const newDistance = THREE.MathUtils.lerp(currentDistance, zoomTargetDistance, 0.1)
-      if (Math.abs(newDistance - zoomTargetDistance) < 0.01) {
-        zoomTargetDistance = null
-      }
-      // Move camera along its direction from origin
-      const dir = camera.position.clone().normalize()
-      camera.position.copy(dir.multiplyScalar(newDistance))
-    }
-
-    // Soft boundary: gentle pull back toward origin when far away
+    // Soft boundary: very gentle pull back when far from cosmos
     const distance = camera.position.length()
     if (distance > SOFT_BOUNDARY) {
-      const pullStrength = (distance - SOFT_BOUNDARY) * 0.002
+      const pullStrength = (distance - SOFT_BOUNDARY) * 0.001
       const pullDir = camera.position.clone().normalize().negate()
-      camera.position.addScaledVector(pullDir, pullStrength)
+      velocity.addScaledVector(pullDir, pullStrength)
     }
-    // Hard clamp at max distance
-    if (distance > ZOOM_MAX) {
-      camera.position.normalize().multiplyScalar(ZOOM_MAX)
+    // Hard clamp only at extreme distance
+    if (distance > HARD_BOUNDARY) {
+      camera.position.normalize().multiplyScalar(HARD_BOUNDARY)
+      velocity.set(0, 0, 0)
     }
   } else if (mode === 'transition') {
     blendProgress += dt / BLEND_DURATION
