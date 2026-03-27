@@ -27,6 +27,19 @@ let positions, colors
 let connections = []        // active connection objects
 let lastRecalcTime = 0
 
+// ── heartbeat sync ────────────────────────────────────────────────
+// When the attractor heart beats, all connections receive a synchronized
+// pulse that propagates outward, delayed by distance from the attractor center.
+let heartbeatPulseTime = -1 // -1 = no active heartbeat pulse
+
+/**
+ * Called by the attractor heart on each beat.
+ * Triggers a synchronized pulse across all mycelium connections.
+ */
+export function triggerHeartbeatPulse() {
+  heartbeatPulseTime = 0
+}
+
 // ── helpers ────────────────────────────────────────────────────────
 
 /** Deterministic hash from two cell IDs → stable float in [0,1) */
@@ -147,6 +160,12 @@ export function updateMycelium(time) {
   const cells = getAliveCells()
   const now = performance.now()
   const dt = 1 / 60 // approximate — good enough for animation
+
+  // Advance heartbeat pulse (propagates over ~0.8s then fades)
+  if (heartbeatPulseTime >= 0) {
+    heartbeatPulseTime += dt * 1.2
+    if (heartbeatPulseTime > 1) heartbeatPulseTime = -1
+  }
 
   // Recalculate connections periodically
   if (now - lastRecalcTime > RECALC_INTERVAL) {
@@ -296,6 +315,17 @@ export function updateMycelium(time) {
         const pd1 = Math.abs(t1 - conn.pulseT)
         if (pd0 < 0.15) pulseBoost0 = 0.2 * (1 - pd0 / 0.15)
         if (pd1 < 0.15) pulseBoost1 = 0.2 * (1 - pd1 / 0.15)
+      }
+
+      // Heartbeat pulse: synchronized flash from the attractor heart
+      // All connections flash together, creating a visible "pump" through the network
+      if (heartbeatPulseTime >= 0) {
+        // Quick bright flash that fades: peaks at 0.1, gone by 0.6
+        const hbFade = heartbeatPulseTime < 0.1
+          ? heartbeatPulseTime / 0.1
+          : Math.max(0, 1 - (heartbeatPulseTime - 0.1) / 0.5)
+        pulseBoost0 += hbFade * 0.15
+        pulseBoost1 += hbFade * 0.15
       }
 
       // Fade at the growth edge

@@ -83,10 +83,10 @@ export function initCameraSystem(cam, domElement) {
     if (mode !== 'viewer') return
     const forward = new THREE.Vector3()
     camera.getWorldDirection(forward)
-    // Distance-adaptive: slower when close to cosmos, faster when far
+    // Distance-adaptive: gentle when close, a bit faster when far
     const dist = camera.position.length()
-    const adaptiveSpeed = 3 + (dist / 40) * 5
-    velocity.addScaledVector(forward, -Math.sign(e.deltaY) * adaptiveSpeed * 0.15)
+    const adaptiveSpeed = 1.5 + (dist / 60) * 2
+    velocity.addScaledVector(forward, -Math.sign(e.deltaY) * adaptiveSpeed * 0.08)
   }, { passive: false })
 
   // WASD + QE for full movement

@@ -3,8 +3,8 @@ import { getCells, getAliveCells, killCell, createCell } from './state/cells.js'
 import { initParticles, updateParticles, getBuffers, getCellParticleMap, addCellParticles } from './cosmos/particles.js'
 import { triggerBirth, updateBirths } from './cosmos/birth.js'
 import { triggerDeath, updateDeaths } from './cosmos/death.js'
-import { initAttractors, updateAttractors } from './cosmos/attractors.js'
-import { initMycelium, updateMycelium } from './cosmos/mycelium.js'
+import { initAttractors, updateAttractors, onHeartbeat } from './cosmos/attractors.js'
+import { initMycelium, updateMycelium, triggerHeartbeatPulse } from './cosmos/mycelium.js'
 import { initCarriers, updateCarriers } from './cosmos/carriers.js'
 import { updateBreathing } from './cosmos/breathing.js'
 import { initCameraSystem, updateCameraSystem } from './camera/controls.js'
@@ -59,6 +59,9 @@ initParticles(scene)
 initAttractors(scene)
 initMycelium(scene)
 initCarriers(scene)
+
+// Wire the attractor heart to the mycelium nervous system
+onHeartbeat(() => triggerHeartbeatPulse())
 
 // Init HUD elements
 initWhisper()
@@ -211,7 +214,7 @@ function animate() {
   updateBirths(bufs.positions, bufs.alphas, bufs.sizes, cpm)
   updateDeaths(bufs.positions, bufs.alphas, bufs.colors, cpm)
   cpuPressure = Math.min(1, Math.max(0, (dt - 0.016) / 0.050))
-  updateAttractors(cpuPressure, cachedBatteryLevel)
+  updateAttractors(cpuPressure, cachedBatteryLevel, dt)
   updateMycelium(elapsed)
   updateCarriers(elapsed)
 
