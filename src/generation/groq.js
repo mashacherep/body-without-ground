@@ -18,7 +18,56 @@ const MIN_INTERVAL = 60_000
 let lastLogprobs = []
 let lastTokens = []
 
+import { getActiveRegions, isAlertActive } from '../signals/alerts.js'
+import { getKyivHour } from '../signals/clocks.js'
+
 const SYSTEM_PROMPT = 'Living art installation "body without ground." Masha, Kyiv→NYC, NYU senior, Moveo AI, ex-DressX. War since 2022. Raw JSON only.'
+
+/**
+ * Build live context for ukraine transmissions from real alert data and Kyiv time.
+ */
+function buildUkraineContext() {
+  const parts = []
+  const kyivHour = getKyivHour()
+
+  // Time of day in Kyiv — shapes the tone
+  if (kyivHour >= 0 && kyivHour < 5) parts.push(' It is deep night in Kyiv (' + kyivHour + ':00).')
+  else if (kyivHour < 8) parts.push(' Early morning in Kyiv (' + kyivHour + ':00). The city is waking.')
+  else if (kyivHour < 12) parts.push(' Morning in Kyiv (' + kyivHour + ':00).')
+  else if (kyivHour < 17) parts.push(' Afternoon in Kyiv (' + kyivHour + ':00).')
+  else if (kyivHour < 21) parts.push(' Evening in Kyiv (' + kyivHour + ':00).')
+  else parts.push(' Night in Kyiv (' + kyivHour + ':00).')
+
+  // Live alert data
+  const regions = getActiveRegions()
+  if (regions.length > 0) {
+    const regionNames = regions.slice(0, 5).map(r => r.title).filter(Boolean)
+    if (regionNames.length > 0) {
+      parts.push(' Active alerts in: ' + regionNames.join(', ') + '.')
+    }
+    // How long the alert has been active
+    const kyivRegion = regions.find(r => r.uid === '31' || /Київ|Kyiv/i.test(r.title))
+    if (kyivRegion && kyivRegion.started) {
+      const startedAt = new Date(kyivRegion.started)
+      const minutesAgo = Math.round((Date.now() - startedAt.getTime()) / 60000)
+      if (minutesAgo > 0 && minutesAgo < 600) {
+        parts.push(' Kyiv alert started ' + minutesAgo + ' minutes ago.')
+      }
+    }
+    parts.push(' Write about what people do RIGHT NOW during this alert.')
+  } else {
+    // No active alerts — write about daily life under war
+    const themes = [
+      ' No alerts right now. Write about the quiet between sirens — charging phones, the generator hum, coffee from a thermos.',
+      ' All clear in Kyiv. Write about normalcy as a practiced skill — the routines people build around unpredictability.',
+      ' No sirens. Write about what the city sounds like when the alerts stop — traffic returning, a dog barking, someone laughing.',
+      ' Quiet now. Write about the things that changed since 2022 that nobody notices anymore — taped windows, backup batteries, the app that shows which shelters are closest.',
+    ]
+    parts.push(themes[Math.floor(Math.random() * themes.length)])
+  }
+
+  return parts.join('')
+}
 
 export function isApiType(type) {
   return API_TYPES.has(type)
@@ -53,7 +102,8 @@ function buildUserPrompt(type, ctx) {
 
   switch (type) {
     case 'ukraine':
-      return 'Write a 3-4 line transmission from Kyiv. The war has been going on since 2022. Power outages, sirens, generators, the metro as shelter.' + alert + dev + mo +
+      return 'Write a 3-4 line transmission from Kyiv. The war has been going on since 2022.' +
+        buildUkraineContext() + alert + dev + mo +
         ' Signals: e:' + entropy + ' ' + tod + ' gen' + genCount + '.' + mk + tail
 
     case 'ascii':
