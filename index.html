@@ -6,10 +6,10 @@
 <title>body without ground</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Inter:wght@300;400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@200;300&family=Space+Mono&family=Inter:wght@300;400&display=swap" rel="stylesheet">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  html, body { width: 100%; height: 100%; overflow: hidden; background: #050508; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #0a0a0f; }
   canvas { display: block; }
   #narrative-overlay {
     position: fixed;
@@ -22,27 +22,29 @@
     z-index: 10;
   }
   #narrative-heading {
-    font-family: Impact, 'Arial Narrow', Helvetica, sans-serif;
-    font-size: clamp(2.2rem, 6.5vw, 5.5rem);
-    color: rgba(220, 215, 205, 0.85);
+    font-family: 'Oswald', sans-serif;
+    font-weight: 200;
+    font-size: clamp(2.5rem, 7vw, 6rem);
+    color: rgba(220, 215, 205, 0.50);
     text-align: center;
     max-width: 80vw;
     line-height: 0.95;
     opacity: 0;
     transition: opacity 0.8s ease-in-out;
     text-transform: uppercase;
-    letter-spacing: 0.02em;
+    letter-spacing: -0.02em;
   }
   #narrative-subtitle {
-    font-family: 'Courier New', monospace;
-    font-size: clamp(0.75rem, 1.5vw, 1.1rem);
-    color: rgba(245, 240, 228, 0.35);
+    font-family: 'Inter', sans-serif;
+    font-weight: 300;
+    font-size: clamp(0.8rem, 1.5vw, 1.1rem);
+    color: rgba(245, 240, 228, 0.28);
     text-align: center;
     max-width: 60vw;
     margin-top: 1rem;
     opacity: 0;
     transition: opacity 0.8s ease-in-out;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.03em;
     line-height: 1.7;
   }
   #narrative-heading.visible,
@@ -50,95 +52,126 @@
     opacity: 1;
   }
 
-  /* Whisper panel — ambient text from nearby cells */
   /* Whisper panel — top left corner */
   #whisper-panel {
     position: fixed;
-    top: 16px;
-    left: 20px;
-    max-width: 260px;
+    top: 20px;
+    left: 24px;
+    max-width: 280px;
     z-index: 8;
     pointer-events: none;
     opacity: 0;
     transition: opacity 1.5s ease-in-out;
   }
   #whisper-panel.visible { opacity: 1; }
+  #whisper-panel::after {
+    content: '';
+    display: block;
+    width: 80px;
+    height: 1px;
+    background: linear-gradient(to right, rgba(255,255,255,0.15), transparent);
+    margin-top: 8px;
+  }
   #whisper-type {
-    font-family: 'Courier New', monospace;
-    font-size: 8px;
-    letter-spacing: 0.14em;
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.16em;
     text-transform: uppercase;
-    color: rgba(255,255,255,0.2);
+    color: rgba(255,255,255,0.30);
     margin-bottom: 6px;
   }
   #whisper-text {
-    font-family: Georgia, 'Times New Roman', serif;
-    font-size: 11px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 300;
+    font-size: 12px;
     line-height: 1.6;
-    color: rgba(255,255,255,0.3);
-    font-style: italic;
-  }
-  #whisper-panel.type-ukraine #whisper-text {
-    color: rgba(228,172,68,0.5);
-    font-style: normal;
-  }
-  #whisper-panel.type-essay #whisper-text {
-    font-family: 'Courier New', monospace;
-    font-size: 11px;
-    color: rgba(175,148,240,0.4);
-    font-style: normal;
+    color: rgba(255,255,255,0.35);
   }
 
   /* Kyiv/NYC clock HUD */
   #clock-hud {
     position: fixed;
-    top: 16px;
-    right: 20px;
+    top: 20px;
+    right: 24px;
     z-index: 8;
     pointer-events: none;
-    font-family: 'Courier New', monospace;
+    font-family: 'Space Mono', monospace;
     font-size: 10px;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
     text-align: right;
     line-height: 1.8;
   }
-  #kyiv-clock { color: rgba(220,165,55,0.5); }
-  #nyc-clock { color: rgba(120,165,220,0.4); }
+  #kyiv-clock { color: rgba(255,255,255,0.50); }
+  #nyc-clock { color: rgba(255,255,255,0.40); }
+  #clock-hud::after {
+    content: '';
+    display: block;
+    width: 80px;
+    height: 1px;
+    background: linear-gradient(to left, rgba(255,255,255,0.15), transparent);
+    margin-top: 8px;
+    margin-left: auto;
+  }
 
-  /* Machine vitals HUD — bottom right */
-  /* Bottom bar — single row with vitals + assumptions */
-  #bottom-bar {
+  /* Bottom-left vitals */
+  #vitals-hud {
     position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
+    bottom: 20px;
+    left: 24px;
     z-index: 8;
     pointer-events: none;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 8px 20px;
-    font-family: 'Courier New', monospace;
-    font-size: 9px;
-    letter-spacing: 0.08em;
-    border-top: 1px solid rgba(255,255,255,0.04);
-    background: rgba(4,6,16,0.5);
-  }
-  #vitals-hud {
-    color: rgba(255,255,255,0.3);
-    display: flex;
-    gap: 18px;
-    flex-wrap: wrap;
-  }
-  #assumptions-counter {
-    color: rgba(200,62,42,0.6);
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
     text-transform: uppercase;
-    letter-spacing: 0.12em;
-    font-size: 8px;
-    opacity: 0;
-    transition: opacity 2s;
+    color: rgba(255,255,255,0.50);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
   }
-  #assumptions-counter.visible { opacity: 1; }
+  #vitals-hud::before {
+    content: '';
+    display: block;
+    width: 80px;
+    height: 1px;
+    background: linear-gradient(to right, rgba(255,255,255,0.15), transparent);
+    margin-bottom: 8px;
+  }
+
+  /* Bottom-right alert corner */
+  #alert-corner {
+    position: fixed;
+    bottom: 20px;
+    right: 24px;
+    z-index: 8;
+    pointer-events: none;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.40);
+    text-align: right;
+  }
+  #alert-corner::before {
+    content: '';
+    display: block;
+    width: 80px;
+    height: 1px;
+    background: linear-gradient(to left, rgba(255,255,255,0.15), transparent);
+    margin-bottom: 8px;
+    margin-left: auto;
+  }
+
+  /* Alert badge */
+  #alert-badge {
+    color: rgba(228, 172, 68, 0.7);
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    display: none;
+  }
+  #alert-badge.active { display: block; }
 
   /* Generation feed — shows new content briefly */
   #gen-feed {
@@ -154,35 +187,39 @@
     transition: opacity 1.2s;
   }
   #gen-feed.visible { opacity: 1; }
+  #gen-feed-type {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.20);
+    margin-bottom: 10px;
+  }
   #gen-feed-text {
-    font-family: Georgia, serif;
-    font-size: clamp(1.4rem, 3.5vw, 2.4rem);
-    color: rgba(245,238,220,0.85);
-    font-style: italic;
-    line-height: 1.6;
+    font-family: 'Inter', sans-serif;
+    font-weight: 300;
+    font-size: clamp(1.2rem, 2.8vw, 2rem);
+    color: rgba(245,238,220,0.50);
+    font-style: normal;
+    line-height: 1.7;
     max-width: 65vw;
   }
-  #gen-feed-text .token-high { color: rgba(245,238,220,0.85); }
-  #gen-feed-text .token-mid  { color: rgba(245,238,220,0.55); }
-  #gen-feed-text .token-low  { color: rgba(220,70,50,0.8); }
-  #gen-feed-type {
-    font-family: 'Courier New', monospace;
-    font-size: 8px;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
+  #gen-feed-text .token-high { color: rgba(245,238,220,0.55); }
+  #gen-feed-text .token-mid  { color: rgba(245,238,220,0.35); }
+  #gen-feed-text .token-low  { color: rgba(200,80,60,0.50); }
+
+  /* Prompt transparency panel */
+  #gen-feed-prompt {
+    font-family: 'Space Mono', monospace;
+    font-size: 7px;
+    letter-spacing: 0.08em;
     color: rgba(255,255,255,0.15);
-    margin-bottom: 8px;
+    margin-top: 12px;
+    line-height: 1.8;
+    max-width: 50vw;
+    text-align: center;
+    pointer-events: none;
   }
-  #alert-badge {
-    color: rgba(255,80,60,0.7);
-    font-size: 8px;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    display: none;
-    animation: alertPulse 1.5s ease-in-out infinite;
-  }
-  #alert-badge.active { display: block; }
-  @keyframes alertPulse { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
 
   #reading-overlay {
     position: fixed;
@@ -213,7 +250,7 @@
   #reading-panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 1px; }
 
   #reading-type {
-    font-family: 'Courier New', monospace;
+    font-family: 'Space Mono', monospace;
     font-size: 9px;
     letter-spacing: 0.14em;
     text-transform: uppercase;
@@ -226,7 +263,7 @@
     line-height: 1.7;
   }
   #reading-assumptions {
-    font-family: 'Courier New', monospace;
+    font-family: 'Space Mono', monospace;
     font-size: 11px;
     font-style: italic;
     color: rgba(220,80,60,0.6);
@@ -236,7 +273,7 @@
   }
   #reading-assumptions.visible { opacity: 1; }
   #reading-meta {
-    font-family: 'Courier New', monospace;
+    font-family: 'Space Mono', monospace;
     font-size: 8px;
     letter-spacing: 0.1em;
     text-transform: uppercase;
@@ -246,7 +283,8 @@
 
   /* Text type styles applied to #reading-content */
   #reading-content.type-poem {
-    font-family: Georgia, 'Times New Roman', serif;
+    font-family: 'Inter', sans-serif;
+    font-weight: 300;
     font-style: italic;
     font-size: 24px;
     line-height: 1.65;
@@ -254,20 +292,20 @@
     white-space: pre-line;
   }
   #reading-content.type-essay {
-    font-family: 'Courier New', monospace;
+    font-family: 'Space Mono', monospace;
     font-size: 14px;
     line-height: 1.8;
     color: rgba(175,148,240,0.75);
     max-width: 640px;
   }
   #reading-content.type-ukraine {
-    font-family: 'Courier New', monospace;
+    font-family: 'Space Mono', monospace;
     font-size: 16px;
     line-height: 1.7;
     color: rgba(228,172,68,0.85);
   }
   #reading-content.type-ascii {
-    font-family: 'Courier New', monospace;
+    font-family: 'Space Mono', monospace;
     font-size: 16px;
     line-height: 1.3;
     color: rgba(80,145,215,0.75);
@@ -275,7 +313,8 @@
     letter-spacing: 0.05em;
   }
   #reading-content.type-about {
-    font-family: Georgia, 'Times New Roman', serif;
+    font-family: 'Inter', sans-serif;
+    font-weight: 300;
     font-size: 18px;
     line-height: 1.8;
     color: rgba(245,240,230,0.85);
@@ -294,7 +333,8 @@
     border-radius: 2px;
   }
   #reading-content.type-viz .viz-caption {
-    font-family: Georgia, 'Times New Roman', serif;
+    font-family: 'Inter', sans-serif;
+    font-weight: 300;
     font-style: italic;
     font-size: 14px;
     line-height: 1.7;
@@ -310,10 +350,11 @@
     left: 50%;
     transform: translateX(-50%);
     z-index: 11;
-    font-family: 'Courier New', monospace;
-    font-size: 10px;
-    letter-spacing: 0.1em;
-    color: rgba(255,255,255,0.18);
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.15);
     pointer-events: none;
     opacity: 0;
     transition: opacity 1.5s ease-in-out;
@@ -327,74 +368,23 @@
     left: 50%;
     transform: translateX(-50%);
     z-index: 12;
-    font-family: 'Courier New', monospace;
-    font-size: 10px;
-    letter-spacing: 0.12em;
-    color: rgba(255,255,255,0.2);
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.18);
     pointer-events: none;
     opacity: 0;
     transition: opacity 1.5s;
   }
   #sound-prompt.visible { opacity: 1; }
 
-  /* Prompt transparency panel — raw inputs that produced the output */
-  #gen-feed-prompt {
-    font-family: 'Courier New', monospace;
-    font-size: 7px;
-    letter-spacing: 0.06em;
-    color: rgba(210,170,80,0.25);
-    margin-top: 12px;
-    line-height: 1.8;
-    max-width: 50vw;
-    text-align: center;
-    pointer-events: none;
-  }
-
-  /* Assumptions ledger — right side, the machine's guesses about you */
-  #assumptions-ledger {
-    position: fixed;
-    top: 50%;
-    right: 24px;
-    transform: translateY(-50%);
-    z-index: 8;
-    pointer-events: none;
-    font-family: Georgia, serif;
-    font-size: 12px;
-    color: rgba(200,70,50,0.5);
-    text-align: right;
-    max-width: 320px;
-    max-height: 240px;
-    overflow: hidden;
-    line-height: 2.2;
-  }
-  #assumptions-ledger .ledger-count {
-    font-family: 'Courier New', monospace;
-    color: rgba(200,70,50,0.4);
-    margin-bottom: 10px;
-    font-size: 8px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-  }
-  #assumptions-ledger .ledger-item {
-    opacity: 0;
-    transition: opacity 1.5s ease-in;
-    color: rgba(200,70,50,0.4);
-    font-style: italic;
-  }
-  #assumptions-ledger .ledger-item::before {
-    content: '\u2014 ';
-    opacity: 0.4;
-  }
-  #assumptions-ledger .ledger-item.visible {
-    opacity: 1;
-  }
-
   /* Ukraine clock in reading view */
   .reading-kyiv-clock {
-    font-family: 'Courier New', monospace;
+    font-family: 'Space Mono', monospace;
     font-size: 10px;
     letter-spacing: 0.1em;
-    color: rgba(220,165,55,0.5);
+    color: rgba(255,255,255,0.50);
     margin-top: 0.5rem;
   }
 </style>
@@ -411,17 +401,17 @@
   <div id="whisper-text"></div>
 </div>
 
-<!-- Clock HUD + Ukraine minimap -->
+<!-- Clock HUD -->
 <div id="clock-hud">
   <div id="kyiv-clock">KYIV --:--</div>
   <div id="nyc-clock">NYC --:--</div>
-  <div id="alert-badge">AIR RAID ALERT — KYIV</div>
 </div>
 
-<!-- Bottom bar: vitals + assumptions counter -->
-<div id="bottom-bar">
-  <div id="vitals-hud"></div>
-  <div id="assumptions-counter"></div>
+<!-- Bottom corners -->
+<div id="vitals-hud"></div>
+<div id="alert-corner">
+  <div id="alert-status">ALERT · CLEAR</div>
+  <div id="alert-badge">ALERT · ACTIVE — KYIV</div>
 </div>
 
 <!-- Generation feed -->
@@ -430,9 +420,6 @@
   <div id="gen-feed-text"></div>
   <div id="gen-feed-prompt"></div>
 </div>
-
-<!-- Assumptions ledger — persistent log of invented facts -->
-<div id="assumptions-ledger"></div>
 
 <div id="controls-hint">scroll to fly · drag to look · double-click to read</div>
 <div id="sound-prompt">click anywhere to let the garden breathe</div>

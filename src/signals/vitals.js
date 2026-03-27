@@ -1,62 +1,42 @@
 /**
- * Machine vitals HUD — shows real device signals updating in real time.
- * Makes the machine's body visible to the viewer.
+ * Machine vitals HUD — shows real device signals.
+ * CPU pressure and frame timing — the machine's body made visible.
  */
 
 import { getAliveCells } from '../state/cells.js'
-import { getGenCount, getTotalDeaths, getAllAssumptions } from '../generation/scheduler.js'
-import { getCorpusSize } from '../generation/markov.js'
-import { getLorenzState } from '../cosmos/attractors.js'
+import { getGenCount, getTotalDeaths } from '../generation/scheduler.js'
 
 let vitalsEl = null
-let assumptionsEl = null
-let battery = { level: 1, charging: true }
 let updateTimer = null
+let lastFrameTime = 16.6
 
 export function initVitals() {
   vitalsEl = document.getElementById('vitals-hud')
-  assumptionsEl = document.getElementById('assumptions-counter')
-
-  // Get battery
-  if (navigator.getBattery) {
-    navigator.getBattery().then(b => {
-      battery.level = b.level
-      battery.charging = b.charging
-      b.addEventListener('levelchange', () => { battery.level = b.level })
-      b.addEventListener('chargingchange', () => { battery.charging = b.charging })
-    }).catch(() => {})
-  }
-
   updateTimer = setInterval(updateVitals, 2000)
 }
 
 function updateVitals() {
   if (!vitalsEl) return
 
-  const upMin = Math.round(performance.now() / 60000)
-  const bat = Math.round(battery.level * 100)
   const alive = getAliveCells().length
   const deaths = getTotalDeaths()
   const gens = getGenCount()
-  const words = getCorpusSize()
-  const lorenz = getLorenzState()
-  const mem = navigator.deviceMemory || '?'
+  const upMin = Math.round(performance.now() / 60000)
 
   vitalsEl.innerHTML = [
-    `<span>uptime ${upMin}m</span>`,
-    `<span>battery ${bat}%</span>`,
-    `<span>cells ${alive} · ${deaths} dead</span>`,
-    `<span>gen ${gens}</span>`,
-    `<span>markov ${words}</span>`,
-    `<span>\u03C1 ${lorenz.rho.toFixed(1)}</span>`,
+    `<span>CELLS · ${alive}</span>`,
+    `<span>DEAD · ${deaths}</span>`,
+    `<span>GEN · ${gens}</span>`,
+    `<span>FRAME · ${lastFrameTime.toFixed(1)}ms</span>`,
+    `<span>UP · ${upMin}m</span>`,
   ].join('')
+}
 
-  // Update assumptions counter
-  const assumptions = getAllAssumptions()
-  if (assumptions.length > 0 && assumptionsEl) {
-    assumptionsEl.classList.add('visible')
-    assumptionsEl.textContent = `the machine has invented ${assumptions.length} facts about you. none of them true.`
-  }
+/**
+ * Call from animation loop to track frame timing.
+ */
+export function reportFrameTime(dt) {
+  lastFrameTime = dt * 1000
 }
 
 export function stopVitals() {

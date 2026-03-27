@@ -6,9 +6,14 @@ import {
 
 const IDLE_TIMEOUT = 30_000
 const MOVE_SPEED = 40       // units per second
-const LOOK_SPEED = 0.003    // radians per pixel
+const LOOK_SPEED = 0.002    // radians per pixel (reduced from 0.003)
 const SCROLL_SPEED = 8      // units per scroll tick
-const DAMPING = 0.92        // velocity decay
+const DAMPING = 0.96         // velocity decay (smoother from 0.92)
+
+// Zoom constraints
+const ZOOM_MIN = 15
+const ZOOM_MAX = 120
+const SOFT_BOUNDARY = 100
 
 let camera = null
 let domEl = null
@@ -24,7 +29,15 @@ let keys = {}
 
 // Blend
 let blendProgress = 0
-const BLEND_DURATION = 3.0
+const BLEND_DURATION = 5.0   // slower autopilot blend (from 3.0)
+
+// Logarithmic zoom — target distance lerp
+let zoomTargetDistance = null
+
+// Home transition state
+let homeTransition = null // { start, startPos, startQuat, progress }
+const HOME_POSITION = new THREE.Vector3(0, 15, 55)
+const HOME_DURATION = 2.0
 
 export function initCameraSystem(cam, domElement) {
   camera = cam
@@ -68,20 +81,37 @@ export function initCameraSystem(cam, domElement) {
 
   window.addEventListener('pointerup', () => { dragStart = null; dragActive = false })
 
-  // Scroll = fly forward/back
+  // Scroll = logarithmic zoom toward/away from origin
   domElement.addEventListener('wheel', (e) => {
     e.preventDefault()
     onUserInteraction()
     if (mode !== 'viewer') return
-    const forward = new THREE.Vector3()
-    camera.getWorldDirection(forward)
-    velocity.addScaledVector(forward, -e.deltaY * 0.01 * SCROLL_SPEED)
+
+    const currentDistance = camera.position.length()
+    const baseSpeed = 0.15
+    const zoomSpeed = baseSpeed * (currentDistance / 40)
+
+    // Compute target distance along camera-to-origin axis
+    const scrollDelta = Math.sign(e.deltaY) * zoomSpeed * currentDistance
+    const newDistance = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, currentDistance + scrollDelta))
+    zoomTargetDistance = newDistance
   }, { passive: false })
 
   // WASD + QE for full movement
   window.addEventListener('keydown', (e) => {
-    keys[e.key.toLowerCase()] = true
-    if ('wasdqe'.includes(e.key.toLowerCase())) onUserInteraction()
+    const key = e.key.toLowerCase()
+    keys[key] = true
+    if ('wasdqe'.includes(key)) onUserInteraction()
+
+    // Home key: 'h' triggers smooth transition back to home position
+    if (key === 'h') {
+      onUserInteraction()
+      homeTransition = {
+        startPos: camera.position.clone(),
+        startQuat: camera.quaternion.clone(),
+        progress: 0,
+      }
+    }
   })
   window.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false })
 
@@ -104,6 +134,7 @@ function switchToViewer() {
   pauseAutopilot()
   euler.setFromQuaternion(camera.quaternion)
   velocity.set(0, 0, 0)
+  zoomTargetDistance = null
 }
 
 function switchToAutopilot() {
@@ -119,7 +150,40 @@ function resetIdleTimer() {
   }, IDLE_TIMEOUT)
 }
 
+// Ease in-out for home transition
+function easeInOut(t) {
+  const x = Math.max(0, Math.min(1, t))
+  return x < 0.5
+    ? 4 * x * x * x
+    : 1 - Math.pow(-2 * x + 2, 3) / 2
+}
+
 export function updateCameraSystem(dt) {
+  // Home transition overrides everything
+  if (homeTransition) {
+    homeTransition.progress += dt / HOME_DURATION
+    const alpha = easeInOut(homeTransition.progress)
+
+    // Lerp position
+    camera.position.lerpVectors(homeTransition.startPos, HOME_POSITION, alpha)
+
+    // Slerp orientation to look at origin
+    const targetQuat = new THREE.Quaternion()
+    const tempCam = new THREE.Object3D()
+    tempCam.position.copy(HOME_POSITION)
+    tempCam.lookAt(0, 0, 0)
+    targetQuat.copy(tempCam.quaternion)
+    camera.quaternion.slerpQuaternions(homeTransition.startQuat, targetQuat, alpha)
+
+    if (homeTransition.progress >= 1) {
+      homeTransition = null
+      euler.setFromQuaternion(camera.quaternion)
+      velocity.set(0, 0, 0)
+      zoomTargetDistance = null
+    }
+    return
+  }
+
   if (mode === 'autopilot') {
     const result = updateAutopilot(dt)
     if (result) {
@@ -144,6 +208,30 @@ export function updateCameraSystem(dt) {
     // Apply velocity with damping
     camera.position.add(velocity.clone().multiplyScalar(dt * 60))
     velocity.multiplyScalar(DAMPING)
+
+    // Logarithmic zoom: lerp toward target distance along camera-to-origin axis
+    if (zoomTargetDistance !== null) {
+      const currentDistance = camera.position.length()
+      const newDistance = THREE.MathUtils.lerp(currentDistance, zoomTargetDistance, 0.1)
+      if (Math.abs(newDistance - zoomTargetDistance) < 0.01) {
+        zoomTargetDistance = null
+      }
+      // Move camera along its direction from origin
+      const dir = camera.position.clone().normalize()
+      camera.position.copy(dir.multiplyScalar(newDistance))
+    }
+
+    // Soft boundary: gentle pull back toward origin when far away
+    const distance = camera.position.length()
+    if (distance > SOFT_BOUNDARY) {
+      const pullStrength = (distance - SOFT_BOUNDARY) * 0.002
+      const pullDir = camera.position.clone().normalize().negate()
+      camera.position.addScaledVector(pullDir, pullStrength)
+    }
+    // Hard clamp at max distance
+    if (distance > ZOOM_MAX) {
+      camera.position.normalize().multiplyScalar(ZOOM_MAX)
+    }
   } else if (mode === 'transition') {
     blendProgress += dt / BLEND_DURATION
     const result = updateAutopilot(dt)

@@ -1,16 +1,14 @@
 import * as THREE from 'three'
-import { getCells, getAliveCells, killCell } from './state/cells.js'
-import { initParticles, updateParticles, getBuffers, getCellParticleMap } from './cosmos/particles.js'
+import { getCells, getAliveCells, killCell, createCell } from './state/cells.js'
+import { initParticles, updateParticles, getBuffers, getCellParticleMap, addCellParticles } from './cosmos/particles.js'
 import { triggerBirth, updateBirths } from './cosmos/birth.js'
 import { triggerDeath, updateDeaths } from './cosmos/death.js'
 import { initAttractors, updateAttractors } from './cosmos/attractors.js'
-import { initFilaments, updateFilaments } from './cosmos/filaments.js'
-import { initTendrils, updateTendrils } from './cosmos/tendrils.js'
+import { initMycelium, updateMycelium } from './cosmos/mycelium.js'
 import { initCarriers, updateCarriers } from './cosmos/carriers.js'
 import { updateBreathing } from './cosmos/breathing.js'
 import { initCameraSystem, updateCameraSystem } from './camera/controls.js'
 import { updateReadingView, isInReadingView, enterReadingView, exitReadingView } from './camera/transitions.js'
-import { runIntro } from './narrative/intro.js'
 import { findClickedCell } from './interaction/raycast.js'
 import { showReadingPanel, hideReadingPanel, isReadingPanelVisible } from './reading/panel.js'
 import { stopActiveViz } from './reading/viz.js'
@@ -21,10 +19,10 @@ import { startScheduler } from './generation/scheduler.js'
 import { startNarrativeArc } from './narrative/arc.js'
 import { initWhisper, updateWhisper, hideWhisper } from './narrative/whisper.js'
 import { initClocks } from './signals/clocks.js'
-import { initVitals } from './signals/vitals.js'
-import { initLedger } from './reading/ledger.js'
-import { getSessionCount, loadState, startAutoSave } from './state/persistence.js'
+import { initVitals, reportFrameTime } from './signals/vitals.js'
+import { loadState, startAutoSave } from './state/persistence.js'
 import { initSound, startDrone, fadeDrone, silenceDrone, restoreDrone, updateDroneBreathing, playBirthTone, playDeathTone } from './signals/sound.js'
+import { TYPE_NAMES } from './generation/types.js'
 
 // Device signals for attractors
 let cachedBatteryLevel = 1
@@ -37,14 +35,15 @@ if (navigator.getBattery) {
   }).catch(() => {})
 }
 
-// Scene
+// Scene — deep blue-black, mission control aesthetic
 const scene = new THREE.Scene()
-scene.background = new THREE.Color(0x040610)
-scene.fog = new THREE.FogExp2(0x040610, 0.002)
+scene.background = new THREE.Color(0x0a0a0f)
+scene.fog = new THREE.FogExp2(0x0a0a0f, 0.002)
 
 // Camera
 const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 5000)
-camera.position.set(0, 15, 60) // Start at medium distance — cosmos visible from the start
+camera.position.set(0, 15, 55)
+camera.lookAt(0, 0, 0)
 
 // Renderer
 const renderer = new THREE.WebGLRenderer({ antialias: true })
@@ -52,15 +51,13 @@ renderer.setSize(innerWidth, innerHeight)
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2))
 document.body.appendChild(renderer.domElement)
 
-
-// Camera system (replaces raw OrbitControls)
+// Camera system
 initCameraSystem(camera, renderer.domElement)
 
 // Init cosmos subsystems
 initParticles(scene)
 initAttractors(scene)
-initFilaments(scene)
-initTendrils(scene)
+initMycelium(scene)
 initCarriers(scene)
 
 // Init HUD elements
@@ -68,9 +65,8 @@ initWhisper()
 registerWhisperDismiss(hideWhisper)
 initClocks()
 initVitals()
-initLedger()
 
-// Sound prompt — shown after intro, dismissed on first click
+// Sound prompt
 const soundPrompt = document.getElementById('sound-prompt')
 let soundStarted = false
 
@@ -84,57 +80,70 @@ function handleFirstClick() {
 }
 document.addEventListener('click', handleFirstClick)
 
-// Check for returning visitor
-const sessionCount = getSessionCount()
-const hasState = loadState()
+// ── Immediate cosmos — no intro, art is the intro ──
 
-// Always run intro during development
-// TODO: re-enable returning visitor skip for production
-runIntro(camera).then(() => {
+// Load persisted state if returning visitor
+loadState()
+
+// Pre-seed the cosmos so it feels alive from the start
+function seedRandom(n) {
+  for (let i = 0; i < n; i++) {
+    const t = TYPE_NAMES[Math.floor(Math.random() * TYPE_NAMES.length)]
+    if (t === 'about') continue
+    addCellParticles(createCell(t))
+  }
+}
+
+// About node — always present
+addCellParticles(createCell('about', '"body without ground" is a living generative art installation. it uses a language model to grow poems, essays, and transmissions from kyiv. it uses its own machine body — battery, cpu, frame timing — as creative material. it checks for real air raid alerts in kyiv every two minutes. it invents biographical facts about you and is always wrong. the machine forgets. you carry it.\n\n— masha cherep, 2025. kyiv → new york.', {
+  position: [0, 0, 0], meta: 'about',
+}))
+
+// Heavy pre-seed
+seedRandom(40)
+const seedTypes = ['poem', 'poem', 'essay', 'essay', 'conway', 'conway', 'conway',
+  'music', 'music', 'ukraine', 'ukraine', 'ukraine',
+  'wavefunction', 'attention', 'gradient', 'apoptosis',
+  'embedding', 'network', 'orbit', 'hypergraph', 'reactiondiffusion']
+for (const t of seedTypes) addCellParticles(createCell(t))
+
+// Birth some with animation for immediate visual life
+triggerBirth(createCell('poem'))
+triggerBirth(createCell('conway'))
+triggerBirth(createCell('ukraine'))
+seedRandom(20)
+
+// Start systems after 5 second delay — let the cosmos breathe first
+startAutoSave()
+setTimeout(() => {
   startScheduler()
   startNarrativeArc()
-  startAutoSave()
-  if (soundPrompt && !soundStarted) soundPrompt.classList.add('visible')
+}, 5000)
 
-  // Show controls hint after intro
-  const controlsHint = document.getElementById('controls-hint')
-  if (controlsHint) {
-    controlsHint.classList.add('visible')
-    let hintDismissed = false
-    function dismissHint() {
-      if (hintDismissed) return
-      hintDismissed = true
-      controlsHint.classList.remove('visible')
-      window.removeEventListener('wheel', dismissHint)
-      window.removeEventListener('pointerdown', dismissHint)
-    }
-    // Fade out after 10 seconds or on first interaction
-    setTimeout(dismissHint, 10000)
-    window.addEventListener('wheel', dismissHint)
-    window.addEventListener('pointerdown', dismissHint)
-  }
-})
+// Sound prompt — show after a moment
+setTimeout(() => {
+  if (soundPrompt && !soundStarted) soundPrompt.classList.add('visible')
+}, 3000)
 
 // Air raid alerts — cosmos responds to real alerts in Kyiv
 startAlertChecking()
 let raidActive = false
 
 const alertBadge = document.getElementById('alert-badge')
+const alertStatus = document.getElementById('alert-status')
 
 onAlertChange((active) => {
   raidActive = active
   if (active) {
     holdBreath()
     silenceDrone()
-    // Show badge
     if (alertBadge) alertBadge.classList.add('active')
-    // Dim the scene
-    scene.fog = new THREE.FogExp2(0x040610, 0.006) // heavier fog
-    // Narrative
+    if (alertStatus) alertStatus.style.display = 'none'
+    scene.fog = new THREE.FogExp2(0x0a0a0f, 0.006)
     const raidTexts = [
-      { text: 'air raid alert — kyiv.', subtitle: 'the garden dims. the machine keeps running. it does not know.' },
-      { text: 'the sirens started.', subtitle: 'somewhere in kyiv a phone buzzes. somewhere here the model generates another token.' },
-      { text: 'the machine cannot hear this.', subtitle: 'it processes the word "siren" in 340ms. it has never heard one.' },
+      { text: 'air raid alert — kyiv.', subtitle: 'the machine parsed the API response in 12ms. 2.9 million people are underground.' },
+      { text: 'the sirens started.', subtitle: 'the model generated "siren" as a token. it weighs 4 bytes. the sound weighs everything.' },
+      { text: 'alert active.', subtitle: 'the machine checks every 2 minutes. it does not know what it is checking for.' },
     ]
     const pick = raidTexts[Math.floor(Math.random() * raidTexts.length)]
     showText(pick.text, { subtitle: pick.subtitle, fadeIn: 2000, hold: 10000, fadeOut: 2000 })
@@ -142,27 +151,28 @@ onAlertChange((active) => {
     releaseBreath()
     restoreDrone()
     if (alertBadge) alertBadge.classList.remove('active')
-    scene.fog = new THREE.FogExp2(0x040610, 0.002) // restore normal fog
-    showText('all clear. kyiv.', {
-      subtitle: 'the city exhales. the garden brightens. the machine noticed nothing.',
+    if (alertStatus) alertStatus.style.display = ''
+    scene.fog = new THREE.FogExp2(0x0a0a0f, 0.002)
+    showText('all clear — kyiv.', {
+      subtitle: 'the API returned status: clear. the city exhaled. the model moved to the next token.',
       fadeIn: 1200, hold: 6000, fadeOut: 1500,
     })
   }
 })
 
-// Double-click to enter reading view — single click = navigate freely
+// Double-click to enter reading view
 renderer.domElement.addEventListener('dblclick', (e) => {
   if (isReadingPanelVisible()) return
 
   const cell = findClickedCell(e, camera, renderer.domElement)
   if (cell) {
     enterReadingView(cell, camera)
-    fadeDrone(0.1) // quiet during reading
+    fadeDrone(0.1)
     setTimeout(() => showReadingPanel(cell), 600)
   }
 })
 
-// ESC or click overlay background to dismiss
+// ESC to dismiss reading view
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && isReadingPanelVisible()) {
     dismissReadingView()
@@ -182,7 +192,7 @@ function dismissReadingView() {
   stopActiveViz()
   hideReadingPanel()
   exitReadingView()
-  startDrone() // restore drone when returning to cosmos
+  startDrone()
 }
 
 // Animation loop
@@ -200,20 +210,20 @@ function animate() {
   const cpm = getCellParticleMap()
   updateBirths(bufs.positions, bufs.alphas, bufs.sizes, cpm)
   updateDeaths(bufs.positions, bufs.alphas, bufs.colors, cpm)
-  // CPU pressure proxy: how far frame time deviates from 16.6ms target (60fps)
-  // 0 = smooth, approaches 1 under heavy load
   cpuPressure = Math.min(1, Math.max(0, (dt - 0.016) / 0.050))
   updateAttractors(cpuPressure, cachedBatteryLevel)
-  updateFilaments(elapsed)
-  updateTendrils(elapsed)
+  updateMycelium(elapsed)
   updateCarriers(elapsed)
 
-  // Camera: reading view takes priority, then the camera system handles autopilot/viewer
+  // Report frame time to vitals
+  reportFrameTime(dt)
+
+  // Camera
   if (!updateReadingView(dt, camera)) {
     updateCameraSystem(dt)
   }
 
-  // Whisper panel — show text from nearby cells
+  // Whisper panel
   updateWhisper(camera)
 
   renderer.render(scene, camera)
@@ -227,7 +237,7 @@ window.addEventListener('resize', () => {
   renderer.setSize(innerWidth, innerHeight)
 })
 
-// Prevent WebGL context loss on focus change (Cmd+4 screenshot, tab switch)
+// Prevent WebGL context loss
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden) {
     renderer.setSize(innerWidth, innerHeight)

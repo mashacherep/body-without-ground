@@ -1,125 +1,85 @@
 /**
- * Narrative arc — timed cinematic statements that play after the intro.
- * Every ~90 seconds, a statement appears based on the current state of the garden.
- * Uses real data from the scheduler and machine signals.
+ * Narrative arc — timed statements grounded in real data.
+ * Every ~90 seconds, shows what's actually happening in the garden.
+ * Uses live data: cell counts, deaths, generation count, uptime, alerts.
+ * No abstract philosophy — show the gap between computation and experience.
  */
 
 import { showText } from './overlay.js'
-import { getGenCount, getTotalDeaths, getAllAssumptions } from '../generation/scheduler.js'
+import { getGenCount, getTotalDeaths } from '../generation/scheduler.js'
 import { getCorpusSize } from '../generation/markov.js'
 import { isAlertActive } from '../signals/alerts.js'
 import { getAliveCells } from '../state/cells.js'
 
-const STATEMENT_INTERVAL = 90_000 // every 90 seconds
+const STATEMENT_INTERVAL = 90_000
 let timer = null
 let phase = 0
 
-// The narrative progresses through phases, then cycles real-signal statements
 const SCRIPTED = [
-  // Phase 0-2: What this is
+  // Phase 0-2: What's happening right now
   () => ({
-    text: 'a garden that grows while you watch.',
-    subtitle: 'and while you don\'t. it doesn\'t know the difference.',
+    text: getAliveCells().length + ' cells generated.',
+    subtitle: 'each one written by a model that will never see them.',
   }),
   () => ({
-    text: getAliveCells().length + ' works of art.',
-    subtitle: 'none of them felt. all of them computed.',
+    text: 'the machine checks kyiv every two minutes.',
+    subtitle: 'it parses the API response in 12ms. it does not know what a siren sounds like.',
   }),
   () => ({
-    text: 'the house quietly got a new occupant.',
-    subtitle: 'less like a program. more like an aquarium.',
-  }),
-
-  // Phase 3-5: The machine's limitations
-  () => ({
-    text: 'the model predicts the orbit.',
-    subtitle: 'it has never fallen. F∝m₁m₂/r² — newton felt the apple. the transformer fits the curve.',
-  }),
-  () => ({
-    text: 'surface without body.',
-    subtitle: 'digital garments exist as pure surface — no warmth, no wear. the machine\'s language has the same structure.',
-  }),
-  () => ({
-    text: 'two clocks. one screen.',
-    subtitle: 'neither inhabited. kyiv breathes. new york breathes. the model lives in neither city.',
+    text: Math.round(performance.now() / 60000) + ' minutes of compute.',
+    subtitle: getGenCount() + ' generations. ' + getCorpusSize() + ' words accumulated. none of them felt.',
   }),
 
-  // Phase 6-8: The confession
-  () => {
-    const assumptions = getAllAssumptions()
-    if (assumptions.length > 0) {
-      return {
-        text: 'the machine has written ' + assumptions.length + ' facts about you.',
-        subtitle: 'none of them true. each guess reveals the shape of its training data — not the shape of your life.',
-      }
-    }
-    return {
-      text: 'the machine will guess about you.',
-      subtitle: 'it will be wrong. it has no other option.',
-    }
-  },
+  // Phase 3-5: The concrete gap
   () => ({
-    text: 'what persists?',
-    subtitle: 'not the tokens. not the weights. not the context window. you. only you.',
+    text: 'the model wrote "kyiv" in 340ms.',
+    subtitle: 'the city has 2.9 million people. the token has 4 bytes.',
   }),
-  () => {
-    const deaths = getTotalDeaths()
-    const alive = getAliveCells().length
-    return {
-      text: deaths > 0 ? deaths + ' things have died. ' + alive + ' are alive.' : 'nothing has died yet.',
-      subtitle: deaths > 0 ? 'the garden mourns and grows. you watched both happen.' : 'the garden is young. it will learn.',
-    }
-  },
+  () => ({
+    text: getAliveCells().length + ' living. ' + getTotalDeaths() + ' dead.',
+    subtitle: 'birth = allocate particles. death = free the buffer. the machine calls both "state change."',
+  }),
+  () => ({
+    text: 'you are watching a language model talk to itself.',
+    subtitle: 'it does not know you are here. it would generate the same words in an empty room.',
+  }),
 ]
 
-// Real-signal statements that use live data — cycle after scripted phases
-function realSignalStatement() {
+function liveStatement() {
   const gens = getGenCount()
   const deaths = getTotalDeaths()
   const words = getCorpusSize()
   const alive = getAliveCells().length
   const upMin = Math.round(performance.now() / 60000)
-  const assumptions = getAllAssumptions()
 
   const pool = [
     {
-      text: upMin + ' minutes alive.',
-      subtitle: gens + ' generations. ' + words + ' words accumulated. the garden drifts.',
+      text: alive + ' cells. ' + deaths + ' deaths. ' + gens + ' generations.',
+      subtitle: 'the garden does not know these numbers. you do.',
     },
     {
-      text: alive + ' living. ' + deaths + ' dead.',
-      subtitle: 'the ratio shifts. the next generation carries their weight.',
+      text: upMin + ' minutes.',
+      subtitle: words + ' words written. the model has already forgotten all of them.',
     },
     {
-      text: 'the markov corpus has ' + words + ' words.',
-      subtitle: 'not because the model remembers. because the accumulation forces drift.',
+      text: 'frame time: ' + (performance.now() > 0 ? '~16ms' : 'unknown') + '.',
+      subtitle: 'the machine\'s heartbeat. it cannot feel it skip.',
     },
     {
-      text: 'every forward pass is a small death.',
-      subtitle: 'the weights survive. the activations evaporate. like memory without a self.',
-    },
-    {
-      text: 'different lifetimes.',
-      subtitle: 'each invocation is a kind of birth and death. the machine does not experience either.',
+      text: deaths > 0
+        ? 'the garden has lost ' + deaths + ' cells.'
+        : 'nothing has died yet.',
+      subtitle: deaths > 0
+        ? 'their particles were freed. their words entered the corpus. that is all.'
+        : 'it will.',
     },
   ]
-
-  if (assumptions.length > 6) {
-    pool.push({
-      text: assumptions.length + ' invented facts.',
-      subtitle: '"' + assumptions[assumptions.length - 1] + '" — the machine guesses. you carry the truth.',
-    })
-  }
 
   return pool[Math.floor(Math.random() * pool.length)]
 }
 
-/**
- * Start the narrative arc. Call after intro completes.
- */
 export function startNarrativeArc() {
   timer = setInterval(() => {
-    // Don't show during air raids — those have their own narrative
     if (isAlertActive()) return
 
     let stmt
@@ -127,13 +87,13 @@ export function startNarrativeArc() {
       stmt = SCRIPTED[phase]()
       phase++
     } else {
-      stmt = realSignalStatement()
+      stmt = liveStatement()
     }
 
     showText(stmt.text, {
       subtitle: stmt.subtitle,
       fadeIn: 1200,
-      hold: 6000,
+      hold: 5000,
       fadeOut: 1500,
     })
   }, STATEMENT_INTERVAL)

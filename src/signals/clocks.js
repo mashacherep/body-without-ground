@@ -22,9 +22,8 @@ function updateClocks() {
     const nh = nyc.getHours(), nm = nyc.getMinutes()
     const kNight = kh < 6 || kh > 21
 
-    kyivEl.textContent = 'KYIV ' + String(kh).padStart(2, '0') + ':' + String(km).padStart(2, '0')
-    kyivEl.style.color = kNight ? 'rgba(130,160,220,0.55)' : 'rgba(220,165,55,0.5)'
-    nycEl.textContent = 'NYC ' + String(nh).padStart(2, '0') + ':' + String(nm).padStart(2, '0')
+    kyivEl.textContent = 'KYIV · ' + String(kh).padStart(2, '0') + ':' + String(km).padStart(2, '0')
+    nycEl.textContent = 'NYC · ' + String(nh).padStart(2, '0') + ':' + String(nm).padStart(2, '0')
   } catch {}
 }
 

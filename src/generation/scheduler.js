@@ -14,12 +14,11 @@ import { triggerDeath } from '../cosmos/death.js'
 import { TYPE_NAMES } from './types.js'
 import { extractWords, markovSeed, recentContext } from './markov.js'
 import { interruptDriftTo, interruptPullBack } from '../camera/controls.js'
-import { showText, clearOverlay, isOverlayVisible, registerGenFeedDismiss } from '../narrative/overlay.js'
+import { showText, clearOverlay, isOverlayVisible, canShow, registerGenFeedDismiss } from '../narrative/overlay.js'
 import { hideWhisper } from '../narrative/whisper.js'
 import { playBirthTone, playDeathTone } from '../signals/sound.js'
 import { spawnFromDeath } from '../cosmos/carriers.js'
 import { isAlertActive } from '../signals/alerts.js'
-import { addAssumptions } from '../reading/ledger.js'
 import { showPromptContext } from '../reading/prompt-view.js'
 
 const BIRTH_INTERVAL = 240_000       // 4 minutes
@@ -154,10 +153,9 @@ async function birthCellWithType(type) {
     extractWords(content)
   }
 
-  // Track assumptions
+  // Track assumptions (kept in memory for narrative, but no longer displayed in ledger)
   if (assumptions.length > 0) {
     allAssumptions = allAssumptions.concat(assumptions)
-    addAssumptions(assumptions, allAssumptions.length)
   }
 
   // Trigger birth animation + sound
@@ -336,16 +334,10 @@ function showGenerationFeed(type, content, context) {
   }
   if (!feedEl) return
 
-  // Don't show if the narrative overlay is already displaying center text
-  if (isOverlayVisible()) {
+  // Priority check — don't show if narrative is active
+  if (!canShow('generation')) {
     return
   }
-
-  // Clear the narrative overlay in case it's fading
-  clearOverlay()
-
-  // Hide whisper panel while center text is showing
-  hideWhisper()
 
   // Show up to 5 lines
   const lines = content.split('\n').filter(l => l.trim()).slice(0, 5).join('\n')

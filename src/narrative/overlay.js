@@ -1,16 +1,19 @@
 /**
- * Reusable cinematic text overlay.
- * Renders heading + optional subtitle over the WebGL canvas.
+ * Text overlay with priority system.
+ * Only one center-area text layer visible at a time.
+ * Priority: narrative > generation > whisper (whisper is corner, not center).
  *
- * Coordinates with the generation feed (#gen-feed) and whisper panel
- * to prevent multiple text layers from overlapping on screen.
+ * Cross-system coordination: higher-priority layers dismiss lower ones.
  */
 
 let headingEl = null
 let subtitleEl = null
 let currentTimeout = null
 
-// Cross-system coordination: dismiss other text layers when narrative text appears
+// Priority tracking
+let activeLayer = 'none' // 'none' | 'narrative' | 'generation'
+
+// Cross-system coordination
 let _dismissGenFeed = null
 let _dismissWhisper = null
 export function registerGenFeedDismiss(fn) { _dismissGenFeed = fn }
@@ -26,17 +29,36 @@ export function isOverlayVisible() {
   return headingEl && headingEl.classList.contains('visible')
 }
 
+export function getActiveLayer() { return activeLayer }
+
+/**
+ * Check if a layer can show based on priority.
+ * @param {'narrative'|'generation'} layer
+ * @returns {boolean}
+ */
+export function canShow(layer) {
+  if (activeLayer === 'none') return true
+  if (layer === 'narrative') return true // narrative always wins
+  if (layer === 'generation' && activeLayer !== 'narrative') return true
+  return false
+}
+
 export function showText(heading, opts = {}) {
   ensureElements()
-  const { subtitle = '', fadeIn = 800, hold = 2000, fadeOut = 800 } = opts
+  const { subtitle = '', fadeIn = 800, hold = 2000, fadeOut = 800, layer = 'narrative' } = opts
+
+  // Priority check — narrative always wins, generation only if narrative isn't active
+  if (!canShow(layer)) return Promise.resolve()
 
   if (currentTimeout) {
     clearTimeout(currentTimeout)
     currentTimeout = null
   }
 
-  // Dismiss other text layers so center text doesn't stack
-  if (_dismissGenFeed) _dismissGenFeed()
+  activeLayer = layer
+
+  // Dismiss lower-priority layers
+  if (_dismissGenFeed && layer === 'narrative') _dismissGenFeed()
   if (_dismissWhisper) _dismissWhisper()
 
   return new Promise((resolve) => {
@@ -59,6 +81,7 @@ export function showText(heading, opts = {}) {
         headingEl.textContent = ''
         subtitleEl.textContent = ''
         currentTimeout = null
+        activeLayer = 'none'
         resolve()
       }, fadeOut)
     }, fadeIn + hold)
@@ -75,6 +98,7 @@ export function clearOverlay() {
   subtitleEl.classList.remove('visible')
   headingEl.textContent = ''
   subtitleEl.textContent = ''
+  activeLayer = 'none'
 }
 
 export async function showSequence(beats) {
